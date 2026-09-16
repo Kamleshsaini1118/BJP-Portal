@@ -1212,6 +1212,9 @@
                                     <DataGridTextColumn Header="Vendor"
                                                         Binding="{Binding VendorDisplay}"
                                                         Width="1.1*"/>
+                                    <DataGridTextColumn Header="Meeting / Campaign"
+                                                        Binding="{Binding MeetingCampaignDisplay}"
+                                                        Width="1.2*"/>
                                     <DataGridTemplateColumn Header="Actions"
                                                             Width="1.6*">
                                         <DataGridTemplateColumn.CellTemplate>

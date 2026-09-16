@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +13,7 @@ namespace StockPortalApp.Models
         public string ItemName { get; set; } = "";
         public string? MealFor { get; set; }
         public string? VendorName { get; set; }
+        public string? MeetingCampaign { get; set; }
         public decimal Qty { get; set; }
         public decimal AvailableQty { get; set; }
         public decimal DispatchedQty { get; set; }
@@ -24,6 +25,7 @@ namespace StockPortalApp.Models
         public string DispatchedDisplay => DispatchedQty.ToString("N0");
         public string AvailableDisplay => AvailableQty.ToString("N0");
         public string VendorDisplay => string.IsNullOrWhiteSpace(VendorName) ? "—" : VendorName;
+        public string MeetingCampaignDisplay => string.IsNullOrWhiteSpace(MeetingCampaign) ? "—" : MeetingCampaign;
         public string DispatchButtonText => AvailableQty <= 0 ? "Dispatched" : "Dispatch";
         public bool CanDispatch => AvailableQty > 0;
         public string ViewDispatchesText => $"Dispatches ({DispatchCount})";

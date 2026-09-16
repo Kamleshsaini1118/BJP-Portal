@@ -21,3 +21,49 @@ BEGIN
 
     SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id, @Code AS DamageCode;
 END
+
+-- Add Food Packet Batch Procedure
+CREATE OR ALTER PROCEDURE [dbo].[sp_AddFoodPacketBatch]  
+    @ItemName        NVARCHAR(150),  
+    @MealFor         NVARCHAR(20)  = NULL,  
+    @VendorName      NVARCHAR(150) = NULL,  
+    @MeetingCampaign NVARCHAR(150) = NULL,  
+    @Qty             DECIMAL(18,2),  
+    @BatchDate       DATE,  
+    @ReceiverName    NVARCHAR(150) = NULL,  
+    @ReceiverNumber  NVARCHAR(15)  = NULL  
+AS  
+BEGIN  
+    SET NOCOUNT ON;  
+  
+    DECLARE @Num INT;  
+    UPDATE dbo.BatchSequence SET @Num = NextNumber, NextNumber = NextNumber + 1 WHERE Id = 1;  
+    DECLARE @Code NVARCHAR(20) = 'FP-' + CAST(@Num AS VARCHAR(10));  
+  
+    INSERT INTO dbo.FoodPacketBatches (BatchCode, ItemName, MealFor, VendorName, MeetingCampaign, Qty, AvailableQty, BatchDate, ReceiverName, ReceiverNumber)  
+    VALUES (@Code, @ItemName, @MealFor, @VendorName, @MeetingCampaign, @Qty, @Qty, @BatchDate, @ReceiverName, @ReceiverNumber);  
+  
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id, @Code AS BatchCode;  
+END
+
+-- Get Food Packet Batches Procedure
+CREATE OR ALTER PROCEDURE [dbo].[sp_GetFoodPacketBatches]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT 
+        b.Id,
+        b.BatchCode,
+        b.ItemName,
+        b.MealFor,
+        b.VendorName,
+        b.MeetingCampaign,
+        b.Qty,
+        b.AvailableQty,
+        (b.Qty - b.AvailableQty) AS DispatchedQty,
+        b.BatchDate,
+        (SELECT COUNT(*) FROM dbo.FoodPacketDispatches d WHERE d.BatchId = b.Id) AS DispatchCount
+    FROM dbo.FoodPacketBatches b
+    ORDER BY b.Id DESC;
+END
+

@@ -240,6 +240,8 @@ namespace StockPortalApp
             if (vendorName == "+ Add New Vendor")
                 vendorName = null;
 
+            var meetingCampaign = MeetingCampaignBox.Text.Trim();
+
             var batchDate = BatchDatePicker.SelectedDate ?? IndiaTime.Today;
 
             SubmitButton.IsEnabled = false;
@@ -254,6 +256,7 @@ namespace StockPortalApp
                         item.Name,
                         mealFor,
                         vendorName,
+                        meetingCampaign,
                         item.Qty,
                         batchDate,
                         receiverName,

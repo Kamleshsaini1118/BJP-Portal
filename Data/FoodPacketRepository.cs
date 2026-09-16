@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
 using System;
 using System.Collections.Generic;
@@ -27,6 +27,7 @@ namespace StockPortalApp.Data
 
             while (await reader.ReadAsync())
             {
+                int meetingCampOrdinal = GetOrdinalSafe(reader, "MeetingCampaign");
                 list.Add(new FoodPacketBatch
                 {
                     Id = reader.GetInt32(reader.GetOrdinal("Id")),
@@ -34,6 +35,7 @@ namespace StockPortalApp.Data
                     ItemName = reader.GetString(reader.GetOrdinal("ItemName")),
                     MealFor = reader.IsDBNull(reader.GetOrdinal("MealFor")) ? null : reader.GetString(reader.GetOrdinal("MealFor")),
                     VendorName = reader.IsDBNull(reader.GetOrdinal("VendorName")) ? null : reader.GetString(reader.GetOrdinal("VendorName")),
+                    MeetingCampaign = (meetingCampOrdinal >= 0 && !reader.IsDBNull(meetingCampOrdinal)) ? reader.GetString(meetingCampOrdinal) : null,
                     Qty = reader.GetDecimal(reader.GetOrdinal("Qty")),
                     AvailableQty = reader.GetDecimal(reader.GetOrdinal("AvailableQty")),
                     DispatchedQty = reader.GetDecimal(reader.GetOrdinal("DispatchedQty")),
@@ -45,9 +47,19 @@ namespace StockPortalApp.Data
             return list;
         }
 
+        private static int GetOrdinalSafe(SqlDataReader reader, string columnName)
+        {
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                if (reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+            return -1;
+        }
+
         /// <summary>Adds one batch (called once per item row). Returns (Id, BatchCode).</summary>
         public static async Task<(int Id, string BatchCode)> AddBatchAsync(
-            string itemName, string? mealFor, string? vendorName, decimal qty,
+            string itemName, string? mealFor, string? vendorName, string? meetingCampaign, decimal qty,
             DateTime batchDate, string? receiverName, string? receiverNumber)
         {
             using var conn = new SqlConnection(ConnectionString);
@@ -57,6 +69,7 @@ namespace StockPortalApp.Data
             cmd.Parameters.AddWithValue("@ItemName", itemName);
             cmd.Parameters.AddWithValue("@MealFor", (object?)mealFor ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@VendorName", (object?)vendorName ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@MeetingCampaign", (object?)meetingCampaign ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Qty", qty);
             cmd.Parameters.AddWithValue("@BatchDate", batchDate.Date);
             cmd.Parameters.AddWithValue("@ReceiverName", (object?)receiverName ?? DBNull.Value);
