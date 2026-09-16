@@ -1,0 +1,344 @@
+<Window x:Class="StockPortalApp.AddEditIssueWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:StockPortalApp.Helpers"
+        Title="Add New Issue"
+        Width="740" SizeToContent="Height" MaxHeight="720"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" ShowInTaskbar="False"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        Background="{StaticResource CreamBrush}" FontFamily="{StaticResource BodyFont}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Accent Thread Line -->
+        <Grid Grid.Row="0" Height="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Rectangle Grid.Column="0" Fill="#FF9933"/>
+            <Rectangle Grid.Column="1" Fill="White"/>
+            <Rectangle Grid.Column="2" Fill="#138808"/>
+        </Grid>
+
+        <!-- Modern Header -->
+        <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="26,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Issue Icon Badge -->
+                    <Border Width="38" Height="38" CornerRadius="9" Background="#FFF5EC" Margin="0,0,12,0" VerticalAlignment="Center">
+                        <Path Data="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" 
+                              Fill="{StaticResource SaffronDeepBrush}" Stretch="Uniform" Width="17" Height="17" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="HeaderTitle" Text="Add New Issue" FontFamily="{StaticResource HeadingFont}"
+                                   FontWeight="Bold" FontSize="18" Foreground="{StaticResource InkBrush}"/>
+                        <TextBlock Text="Log goods issued for an event, and who's responsible for returning them." FontSize="12"
+                                   Foreground="{StaticResource InkSoftBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Tag Badge -->
+                <Border Grid.Column="1" Background="#FFF5EC" BorderBrush="#F0D5C0" BorderThickness="1" CornerRadius="6" Padding="10,5" VerticalAlignment="Center">
+                    <TextBlock Text="Issue Goods" FontSize="11" FontWeight="Bold" Foreground="{StaticResource SaffronDeepBrush}"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Form Card Body -->
+        <ScrollViewer x:Name="BodyScrollViewer" Grid.Row="2" VerticalScrollBarVisibility="Auto" MaxHeight="580">
+            <Border Background="White" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Margin="22,16" Padding="22,20">
+                <StackPanel>
+
+                    <!-- Section 1: Event Details -->
+                    <TextBlock Text="EVENT DETAILS" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Margin="0,0,0,12"/>
+
+                    <!-- Event Name -->
+                    <StackPanel Margin="0,0,0,14">
+                        <TextBlock Text="Event Name" Style="{StaticResource FieldLabel}"/>
+                        <Grid>
+                            <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="10"/>
+                            <TextBlock Text="Enter event title / name" Foreground="{StaticResource InkSoftBrush}" FontSize="13" Margin="14,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=EventNameBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text, ElementName=EventNameBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBox x:Name="EventNameBox" Background="Transparent" BorderThickness="0" Padding="14,10" FontSize="13" Foreground="{StaticResource InkBrush}" VerticalContentAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Event Dates Grid -->
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Event Start Date" Style="{StaticResource FieldLabel}"/>
+                            <DatePicker x:Name="EventStartDatePicker" Style="{StaticResource RoundedDatePicker}" Language="en-IN"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Event End Date" Style="{StaticResource FieldLabel}"/>
+                            <DatePicker x:Name="EventEndDatePicker" Style="{StaticResource RoundedDatePicker}" Language="en-IN"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="Deposit Date" Style="{StaticResource FieldLabel}"/>
+                            <DatePicker x:Name="DepositDatePicker" Style="{StaticResource RoundedDatePicker}" Language="en-IN"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Venue Address -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Venue Address" Style="{StaticResource FieldLabel}"/>
+                        <Grid>
+                            <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="10"/>
+                            <TextBlock Text="Enter venue address" Foreground="{StaticResource InkSoftBrush}" FontSize="13" Margin="14,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=VenueAddressBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text, ElementName=VenueAddressBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBox x:Name="VenueAddressBox" Background="Transparent" BorderThickness="0" Padding="14,10" FontSize="13" Foreground="{StaticResource InkBrush}" VerticalContentAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,4,0,16"/>
+
+                    <!-- Section 2: Receiver Details -->
+                    <TextBlock Text="RECEIVER DETAILS" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Margin="0,0,0,12"/>
+
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Receiver Name -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Receiver Name" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="10"/>
+                                <TextBlock Text="Enter full name" Foreground="{StaticResource InkSoftBrush}" FontSize="13" Margin="14,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=ReceiverNameBox}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Text, ElementName=ReceiverNameBox}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBox x:Name="ReceiverNameBox" Background="Transparent" BorderThickness="0" Padding="14,10" FontSize="13" Foreground="{StaticResource InkBrush}" VerticalContentAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Receiver Number -->
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Receiver Number" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="10"/>
+                                <TextBlock Text="Mobile number" Foreground="{StaticResource InkSoftBrush}" FontSize="13" Margin="14,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=ReceiverNumberBox}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Text, ElementName=ReceiverNumberBox}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBox x:Name="ReceiverNumberBox" helpers:NumericInput.Mode="MobileNumber" Background="Transparent" BorderThickness="0" Padding="14,10" FontSize="13" Foreground="{StaticResource InkBrush}" InputScope="TelephoneNumber" VerticalContentAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Receiver Position -->
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="Receiver Position" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="10"/>
+                                <TextBlock Text="Position / title" Foreground="{StaticResource InkSoftBrush}" FontSize="13" Margin="14,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=ReceiverPositionBox}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Text, ElementName=ReceiverPositionBox}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBox x:Name="ReceiverPositionBox" Background="Transparent" BorderThickness="0" Padding="14,10" FontSize="13" Foreground="{StaticResource InkBrush}" VerticalContentAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Remark Box -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Remark (optional)" Style="{StaticResource FieldLabel}"/>
+                        <Grid>
+                            <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="10"/>
+                            <TextBlock Text="Add additional notes or remarks" Foreground="{StaticResource InkSoftBrush}" FontSize="13" Margin="14,10" VerticalAlignment="Top" IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=RemarkBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text, ElementName=RemarkBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBox x:Name="RemarkBox" Background="Transparent" BorderThickness="0" Padding="14,10" FontSize="13" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" AcceptsReturn="True" Height="60" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,4,0,16"/>
+
+                    <!-- Section 3: Items Issued -->
+                    <TextBlock Text="ITEMS ISSUED" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Margin="0,0,0,12"/>
+
+                    <ItemsControl x:Name="ItemRowsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                                        CornerRadius="10" Padding="16" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="ITEM LINE" FontSize="11" FontWeight="Bold" Foreground="{StaticResource SaffronDeepBrush}"/>
+                                            <Button Grid.Column="1" Content="&#10005;" Width="24" Height="24" Background="White" BorderThickness="1"
+                                                    BorderBrush="{StaticResource LineBrush}" Foreground="{StaticResource InkSoftBrush}" Cursor="Hand"
+                                                    Click="RemoveItemButton_Click"/>
+                                        </Grid>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="1.2*"/>
+                                                <ColumnDefinition Width="12"/>
+                                                <ColumnDefinition Width="1.5*"/>
+                                                <ColumnDefinition Width="12"/>
+                                                <ColumnDefinition Width="0.8*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Category -->
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Category" Style="{StaticResource FieldLabel}"/>
+                                                <ComboBox Style="{StaticResource RoundedComboBox}" Background="White"
+                                                          ItemsSource="{Binding CategoryNames, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          SelectedItem="{Binding Category, UpdateSourceTrigger=PropertyChanged}" Cursor="Hand"/>
+                                            </StackPanel>
+
+                                            <!-- Item -->
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="Item" Style="{StaticResource FieldLabel}"/>
+                                                <ComboBox Style="{StaticResource RoundedComboBox}" Background="White"
+                                                          ItemsSource="{Binding AvailableItems}"
+                                                          SelectedItem="{Binding ProductName, UpdateSourceTrigger=PropertyChanged}" Cursor="Hand"/>
+                                            </StackPanel>
+
+                                            <!-- Quantity -->
+                                            <StackPanel Grid.Column="4">
+                                                <TextBlock Text="Quantity" Style="{StaticResource FieldLabel}"/>
+                                                <Grid>
+                                                    <Border Background="White" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="10"/>
+                                                    <TextBlock Text="Qty" Foreground="{StaticResource InkSoftBrush}" FontSize="12.5" Margin="10,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource AncestorType=Grid}, Path=Children[1].Text}" Value="">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource AncestorType=Grid}, Path=Children[1].Text}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBox helpers:NumericInput.Mode="DigitsOnly" Background="Transparent" BorderThickness="0" Padding="10,8" FontSize="12.5" Foreground="{StaticResource InkBrush}" InputScope="Number" VerticalContentAlignment="Center" Text="{Binding Qty, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Content="+ Add Item Line" Style="{StaticResource OutlineButton}" HorizontalAlignment="Left"
+                            Height="34" Padding="14,0" Margin="0,4,0,0" Click="AddItemButton_Click"/>
+
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="3" Background="White" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="26,14">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Style="{StaticResource OutlineButton}" Width="90" Height="36" Margin="0,0,10,0" Click="CancelButton_Click"/>
+                <Button x:Name="SubmitButton" Content="Submit Issue" Style="{StaticResource MiniButton}" Height="36" Padding="24,0" Click="SubmitButton_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

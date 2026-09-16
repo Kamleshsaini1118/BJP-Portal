@@ -1,0 +1,278 @@
+<UserControl x:Class="StockPortalApp.Views.Reports.ReportsMainView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:StockPortalApp.Views.Reports"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1100">
+    <UserControl.Resources>
+        <!-- REPORT SUB-TAB BUTTON STYLE -->
+        <Style x:Key="ReportSubTabStyle" TargetType="ToggleButton">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="Background" Value="#FAF5F0"/>
+            <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
+            <Setter Property="FontFamily" Value="{StaticResource BodyFont}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,1,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{StaticResource LineBrush}"
+                                BorderThickness="1,1,1,0"
+                                CornerRadius="8,8,0,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#D9531E"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#D9531E"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsChecked" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#F2E6D9"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                BorderBrush="#D9531E"
+                BorderThickness="0,0,0,2"
+                Margin="0,0,0,20">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled"
+                          Focusable="False">
+                <ScrollViewer.Resources>
+                    <!-- Sleek 6px horizontal scrollbar matching project theme -->
+                    <Style TargetType="ScrollBar">
+                        <Setter Property="Height" Value="6"/>
+                        <Setter Property="MinHeight" Value="6"/>
+                        <Setter Property="Margin" Value="0,1,0,0"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ScrollBar">
+                                    <Grid x:Name="Bg" Background="Transparent" Height="6">
+                                        <Track x:Name="PART_Track" IsDirectionReversed="False" Height="6">
+                                            <Track.DecreaseRepeatButton>
+                                                <RepeatButton Command="ScrollBar.PageLeftCommand" Opacity="0" Focusable="False"/>
+                                            </Track.DecreaseRepeatButton>
+                                            <Track.IncreaseRepeatButton>
+                                                <RepeatButton Command="ScrollBar.PageRightCommand" Opacity="0" Focusable="False"/>
+                                            </Track.IncreaseRepeatButton>
+                                            <Track.Thumb>
+                                                <Thumb Height="6" MinWidth="40">
+                                                    <Thumb.Template>
+                                                        <ControlTemplate TargetType="Thumb">
+                                                            <Border Background="#D9531E" CornerRadius="3" Height="6" Opacity="0.65"/>
+                                                        </ControlTemplate>
+                                                    </Thumb.Template>
+                                                </Thumb>
+                                            </Track.Thumb>
+                                        </Track>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ScrollViewer.Resources>
+                <StackPanel Orientation="Horizontal">
+                    <!-- Purchase Report -->
+                    <ToggleButton x:Name="TabPurchaseReport"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  IsChecked="True"
+                                  Checked="Tab_Checked"
+                                  Tag="purchase">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Purchase Report" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- Distribution Report -->
+                    <ToggleButton x:Name="TabDistributionReport"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  Checked="Tab_Checked"
+                                  Tag="distribution">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Distribution Report" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- Damage Report -->
+                    <ToggleButton x:Name="TabDamageReport"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  Checked="Tab_Checked"
+                                  Tag="damage">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Damage Report" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- Vendor Summary -->
+                    <ToggleButton x:Name="TabVendorSummary"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  Checked="Tab_Checked"
+                                  Tag="vendor-summary">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Vendor Summary" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- Opening & Closing Report -->
+                    <ToggleButton x:Name="TabOpeningClosing"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  Checked="Tab_Checked"
+                                  Tag="opening-closing">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Opening &amp; Closing Report" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- Stock Valuation -->
+                    <ToggleButton x:Name="TabStockValuation"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  Checked="Tab_Checked"
+                                  Tag="stock-valuation">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Stock Valuation" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- Pending Challans -->
+                    <ToggleButton x:Name="TabPendingChallans"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  Checked="Tab_Checked"
+                                  Tag="pending-challans">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Pending Challans" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- Quotation Comparison -->
+                    <ToggleButton x:Name="TabQuotationComparison"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  Checked="Tab_Checked"
+                                  Tag="quotation-comparison">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Quotation Comparison" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- PO Status -->
+                    <ToggleButton x:Name="TabPoStatus"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  Checked="Tab_Checked"
+                                  Tag="po-status">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="PO Status" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- Issue Goods -->
+                    <ToggleButton x:Name="TabIssueGoods"
+                                  Style="{StaticResource ReportSubTabStyle}"
+                                  Checked="Tab_Checked"
+                                  Tag="issue-goods">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="14" Height="14" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Issue Goods" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- SUB-REPORT CONTENT AREA -->
+        <Grid Grid.Row="1">
+            <local:PurchaseReportControl x:Name="PurchaseReport" Visibility="Visible"/>
+            <local:DistributionReportControl x:Name="DistributionReport" Visibility="Collapsed"/>
+            <local:DamageReportControl x:Name="DamageReport" Visibility="Collapsed"/>
+            <local:VendorSummaryControl x:Name="VendorSummaryReport" Visibility="Collapsed"/>
+            <local:OpeningClosingReportControl x:Name="OpeningClosingReport" Visibility="Collapsed"/>
+            <local:StockValuationControl x:Name="StockValuationReport" Visibility="Collapsed"/>
+            <local:PendingChallansControl x:Name="PendingChallansReport" Visibility="Collapsed"/>
+            <local:QuotationComparisonControl x:Name="QuotationComparisonReport" Visibility="Collapsed"/>
+            <local:PoStatusControl x:Name="PoStatusReport" Visibility="Collapsed"/>
+            <local:IssueGoodsReportControl x:Name="IssueGoodsReport" Visibility="Collapsed"/>
+        </Grid>
+    </Grid>
+</UserControl>

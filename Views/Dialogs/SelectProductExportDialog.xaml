@@ -1,0 +1,76 @@
+<Window x:Class="StockPortalApp.SelectProductExportDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Export Product Ledger Report"
+        Width="480" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="{StaticResource CreamBrush}" FontFamily="{StaticResource BodyFont}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Accent Thread Line -->
+        <Grid Grid.Row="0" Height="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Rectangle Grid.Column="0" Fill="#FF9933"/>
+            <Rectangle Grid.Column="1" Fill="White"/>
+            <Rectangle Grid.Column="2" Fill="#138808"/>
+        </Grid>
+
+        <!-- Header -->
+        <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="24,18">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="36" Height="36" CornerRadius="8" Background="#FFF5EC" Margin="0,0,12,0" VerticalAlignment="Center">
+                        <Path Data="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" 
+                              Fill="{StaticResource SaffronDeepBrush}" Stretch="Uniform" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Product Ledger Report" FontFamily="{StaticResource HeadingFont}"
+                                   FontWeight="Bold" FontSize="18" Foreground="{StaticResource InkBrush}"/>
+                        <TextBlock Text="Export complete transaction ledger for a specific product." FontSize="12"
+                                   Foreground="{StaticResource InkSoftBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Border Grid.Column="1" Background="#FFF5EC" BorderBrush="#F0D5C0" BorderThickness="1" CornerRadius="6" Padding="10,5" VerticalAlignment="Center">
+                    <TextBlock Text="Excel Export" FontSize="11" FontWeight="Bold" Foreground="{StaticResource SaffronDeepBrush}"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Body Form -->
+        <Border Grid.Row="2" Background="White" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Margin="22,16" Padding="22,20">
+            <StackPanel>
+                <TextBlock Text="SELECT PRODUCT / ITEM" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Margin="0,0,0,12"/>
+                <StackPanel Margin="0,0,0,8">
+                    <TextBlock Text="Product Name" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="ProductCombo" Style="{StaticResource RoundedComboBox}" Height="48"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Footer Actions -->
+        <Border Grid.Row="3" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="22,14" Background="White">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Style="{StaticResource OutlineButton}" Height="36" Padding="16,0" Margin="0,0,10,0" Click="CancelButton_Click"/>
+                <Button Content="Export Ledger" Style="{StaticResource MiniButton}" Height="36" Padding="18,0" Click="ExportButton_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

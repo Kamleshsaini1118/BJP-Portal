@@ -1,0 +1,220 @@
+<Window x:Class="StockPortalApp.NewBatchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:StockPortalApp.Helpers"
+        Title="New Batch"
+        Width="780" SizeToContent="Height" MaxHeight="680"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="{StaticResource CreamBrush}" FontFamily="{StaticResource BodyFont}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Accent Thread Line -->
+        <Grid Grid.Row="0" Height="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Rectangle Grid.Column="0" Fill="#FF9933"/>
+            <Rectangle Grid.Column="1" Fill="White"/>
+            <Rectangle Grid.Column="2" Fill="#138808"/>
+        </Grid>
+
+        <!-- Modern Header -->
+        <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="26,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Package Box Icon Badge -->
+                    <Border Width="36" Height="36" CornerRadius="8" Background="#FFF5EC" Margin="0,0,12,0" VerticalAlignment="Center">
+                        <Path Data="M20 7.5L12 3L4 7.5M20 7.5L12 12M20 7.5V16.5L12 21M12 12L4 7.5M12 12V21M4 7.5V16.5L12 21" 
+                              Stroke="{StaticResource SaffronDeepBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              Stretch="Uniform" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="New Batch" FontFamily="{StaticResource HeadingFont}"
+                                   FontWeight="Bold" FontSize="18" Foreground="{StaticResource InkBrush}"/>
+                        <TextBlock Text="Add a new food packet batch to inventory." FontSize="12"
+                                   Foreground="{StaticResource InkSoftBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Tag Badge -->
+                <Border Grid.Column="1" Background="#FFF5EC" BorderBrush="#F0D5C0" BorderThickness="1" CornerRadius="6" Padding="10,5" VerticalAlignment="Center">
+                    <TextBlock Text="Inventory Batch" FontSize="11" FontWeight="Bold" Foreground="{StaticResource SaffronDeepBrush}"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Form Card Body -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" MaxHeight="520">
+            <Border Background="White" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Margin="22,16" Padding="22,18">
+                <StackPanel>
+
+                    <TextBlock Text="BATCH METADATA" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Margin="0,0,0,12"/>
+
+                    <!-- Row 1: For & Date -->
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="For (Meal Type)" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="MealForCombo" Style="{StaticResource RoundedComboBox}" Cursor="Hand"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Date (dd/mm/yyyy)" Style="{StaticResource FieldLabel}"/>
+                            <DatePicker x:Name="BatchDatePicker" Language="en-IN" Style="{StaticResource RoundedDatePicker}" Cursor="Hand"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Vendor Selection -->
+                    <StackPanel Margin="0,0,0,14">
+                        <TextBlock Text="Vendor" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="VendorCombo" Style="{StaticResource RoundedComboBox}"
+                                  SelectionChanged="VendorCombo_SelectionChanged" Cursor="Hand"/>
+                    </StackPanel>
+
+                    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,2,0,14"/>
+
+                    <TextBlock Text="BATCH ITEMS" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Margin="0,0,0,10"/>
+
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2.1*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="0.8*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="32"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="ITEM NAME" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
+                        <TextBlock Grid.Column="2" Text="QTY" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
+                        <TextBlock Grid.Column="4" Text="PRICE" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
+                        <TextBlock Grid.Column="6" Text="TOTAL" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
+                    </Grid>
+
+                    <!-- Items Control with Row Placeholders -->
+                    <ItemsControl x:Name="ItemRowsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2.1*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="0.8*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="32"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Item Name Field -->
+                                    <Grid Grid.Column="0">
+                                        <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="8"/>
+                                        <TextBlock Text="Enter item name..." Visibility="{Binding Name, Converter={StaticResource StringToVisibilityConverter}}" Foreground="{StaticResource InkSoftBrush}" FontSize="12.5" Margin="10,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                        <TextBox Background="Transparent" BorderThickness="0" Padding="10,8" FontSize="12.5" Foreground="{StaticResource InkBrush}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Qty Field -->
+                                    <Grid Grid.Column="2">
+                                        <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="8"/>
+                                        <TextBlock Text="Qty" Visibility="{Binding Qty, Converter={StaticResource StringToVisibilityConverter}}" Foreground="{StaticResource InkSoftBrush}" FontSize="12.5" Margin="10,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                        <TextBox helpers:NumericInput.Mode="DigitsOnly" Background="Transparent" BorderThickness="0" Padding="10,8" FontSize="12.5" Foreground="{StaticResource InkBrush}" InputScope="Number" Text="{Binding Qty, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Price Field -->
+                                    <Grid Grid.Column="4">
+                                        <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="8"/>
+                                        <TextBlock Text="Price" Visibility="{Binding Price, Converter={StaticResource StringToVisibilityConverter}}" Foreground="{StaticResource InkSoftBrush}" FontSize="12.5" Margin="10,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                        <TextBox helpers:NumericInput.Mode="DecimalOnly" Background="Transparent" BorderThickness="0" Padding="10,8" FontSize="12.5" Foreground="{StaticResource InkBrush}" InputScope="Number" Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Total Field -->
+                                    <Border Grid.Column="6" Background="#FBF5EE" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="8">
+                                        <TextBox Background="Transparent" BorderThickness="0" Padding="10,8" FontSize="12.5" IsReadOnly="True" Foreground="{StaticResource InkSoftBrush}" Text="{Binding TotalDisplay, Mode=OneWay}" VerticalContentAlignment="Center"/>
+                                    </Border>
+
+                                    <!-- Remove Button -->
+                                    <Button Grid.Column="8" Content="&#10005;" Width="28" Height="28" Background="Transparent" BorderThickness="0"
+                                            Foreground="{StaticResource ErrorBrush}" Cursor="Hand" Click="RemoveItemButton_Click"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Content="+ Add Row" Style="{StaticResource OutlineButton}" HorizontalAlignment="Left" Padding="12,5" Height="32"
+                            Margin="0,4,0,14" Click="AddItemButton_Click"/>
+
+                    <Border Background="#FFF5EC" BorderBrush="#F0D5C0" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,16">
+                        <TextBlock VerticalAlignment="Center">
+                            <Run Text="Grand Total: " Foreground="{StaticResource InkSoftBrush}" FontWeight="SemiBold"/>
+                            <Run x:Name="GrandTotalText" Text="₹0" Foreground="{StaticResource SaffronDeepBrush}" FontWeight="Bold" FontSize="16"/>
+                        </TextBlock>
+                    </Border>
+
+                    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,2,0,14"/>
+
+                    <TextBlock Text="RECEIVER DETAILS" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Margin="0,0,0,12"/>
+
+                    <!-- Receiver Name & Receiver Number Row -->
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Receiver Name -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Receiver Name" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="10"/>
+                                <TextBlock Text="Enter receiver name" Visibility="{Binding Text, ElementName=ReceiverNameBox, Converter={StaticResource StringToVisibilityConverter}}" Foreground="{StaticResource InkSoftBrush}" FontSize="13" Margin="14,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                <TextBox x:Name="ReceiverNameBox" Background="Transparent" BorderThickness="0" Padding="14,10" FontSize="13" Foreground="{StaticResource InkBrush}" VerticalContentAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Receiver Number -->
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Receiver Number" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Border Background="#FFFCF9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1.5" CornerRadius="10"/>
+                                <TextBlock Text="Enter contact number" Visibility="{Binding Text, ElementName=ReceiverNumberBox, Converter={StaticResource StringToVisibilityConverter}}" Foreground="{StaticResource InkSoftBrush}" FontSize="13" Margin="14,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                <TextBox x:Name="ReceiverNumberBox" helpers:NumericInput.Mode="MobileNumber" Background="Transparent" BorderThickness="0" Padding="14,10" FontSize="13" Foreground="{StaticResource InkBrush}" InputScope="TelephoneNumber" VerticalContentAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="3" Background="White" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="26,14">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Style="{StaticResource OutlineButton}" Width="90" Height="36" Margin="0,0,10,0" Click="CancelButton_Click"/>
+                <Button x:Name="SubmitButton" Content="Submit Batch" Style="{StaticResource MiniButton}" Height="36" Padding="20,0" Click="SubmitButton_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

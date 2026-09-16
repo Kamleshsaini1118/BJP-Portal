@@ -1,0 +1,23 @@
+
+-- Add a damage report (auto-generates the DMG-#### code)
+CREATE   PROCEDURE dbo.sp_AddDamageRecord
+    @Category         NVARCHAR(100) = NULL,
+    @ItemName          NVARCHAR(150),
+    @Qty               DECIMAL(18,2),
+    @ReporteeName      NVARCHAR(150) = NULL,
+    @ReporteeNumber    NVARCHAR(15)  = NULL,
+    @ReporteePosition  NVARCHAR(100) = NULL,
+    @Remark            NVARCHAR(300) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Num INT;
+    UPDATE dbo.DamageSequence SET @Num = NextNumber, NextNumber = NextNumber + 1 WHERE Id = 1;
+    DECLARE @Code NVARCHAR(20) = 'DMG-' + RIGHT('0000' + CAST(@Num AS VARCHAR(10)), 4);
+
+    INSERT INTO dbo.DamageRecords (DamageCode, ItemName, Category, Qty, ReporteeName, ReporteeNumber, ReporteePosition, DamageDate, Remark)
+    VALUES (@Code, @ItemName, @Category, @Qty, @ReporteeName, @ReporteeNumber, @ReporteePosition, CAST(GETDATE() AS DATE), @Remark);
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id, @Code AS DamageCode;
+END
