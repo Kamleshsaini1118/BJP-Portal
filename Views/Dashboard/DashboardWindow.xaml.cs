@@ -31,6 +31,7 @@ namespace StockPortalApp
             ["add-vendor"] = "Add Vendor",
             ["add-product"] = "Add Product",
             ["quotation"] = "Quotations",
+            ["utility-expenses"] = "Utility Expenses",
             ["utility-reminder"] = "Utility Reminders",
             ["reports"] = "Reports",
         };
@@ -64,6 +65,7 @@ namespace StockPortalApp
                 await LoadPurchasesAsync();
                 await LoadDistributionsAsync();
                 await LoadProjectsAsync();
+                await LoadUtilityExpensesAsync();
                 await LoadUtilityRemindersAsync();
 
                 BuildDashboardOverview();
@@ -1799,8 +1801,8 @@ namespace StockPortalApp
             foreach (var other in new[]
                      {
                          NavDashboard, NavFoodPackets, NavFixedAssets, NavStockReport, NavDamage, NavIssueBorrow,
-                         NavRaisePo, NavAddPurchase, NavQuotation, NavAddDistribution, NavIssueBorrow, NavAddVendor,
-                         NavAddProduct, NavUtilityReminder, NavReports
+                         NavRaisePo, NavAddPurchase, NavQuotation, NavAddDistribution, NavAddVendor,
+                         NavAddProduct, NavUtilityExpenses, NavUtilityReminder, NavReports
                      })
             {
                 if (!ReferenceEquals(other, toggle)) other.IsChecked = false;
@@ -1810,7 +1812,7 @@ namespace StockPortalApp
                      {
                          PanelDashboard, PanelFoodPackets, PanelFixedAssets, PanelStockReport, PanelDamage, PanelIssueBorrow,
                          PanelRaisePo, PanelAddPurchase, PanelQuotation, PanelAddDistribution, PanelAddVendor,
-                         PanelAddProduct, PanelUtilityReminder, PanelReports
+                         PanelAddProduct, PanelUtilityExpenses, PanelUtilityReminder, PanelReports
                      })
             {
                 panel.Visibility = Visibility.Collapsed;
@@ -1830,6 +1832,7 @@ namespace StockPortalApp
                 "add-export" => PanelAddDistribution,
                 "add-vendor" => PanelAddVendor,
                 "add-product" => PanelAddProduct,
+                "utility-expenses" => PanelUtilityExpenses,
                 "utility-reminder" => PanelUtilityReminder,
                 "reports" => PanelReports,
                 _ => PanelDashboard
@@ -1856,6 +1859,11 @@ namespace StockPortalApp
             if (key == "quotation")
             {
                 _ = LoadProjectsAsync();
+            }
+
+            if (key == "utility-expenses")
+            {
+                _ = LoadUtilityExpensesAsync();
             }
 
             if (key == "utility-reminder")
@@ -1958,6 +1966,82 @@ namespace StockPortalApp
                 {
                     await QuotationRepository.DeleteProjectAsync(projectId);
                     await LoadProjectsAsync();
+                }
+            }
+        }
+
+        // ================= UTILITY EXPENSES =================
+
+        private async System.Threading.Tasks.Task LoadUtilityExpensesAsync()
+        {
+            try
+            {
+                string searchKeyword = UtilityExpensesSearchBox?.Text?.Trim() ?? "";
+                var expenses = await UtilityExpenseRepository.GetExpensesAsync(searchKeyword);
+                if (UtilityExpensesGrid != null)
+                {
+                    UtilityExpensesGrid.ItemsSource = expenses;
+                }
+                if (UtilityExpensesEmptyText != null)
+                {
+                    UtilityExpensesEmptyText.Visibility = expenses.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading utility expenses: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void UtilityExpensesSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _ = LoadUtilityExpensesAsync();
+        }
+
+        private async void AddUtilityExpenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new NewUtilityExpenseWindow
+            {
+                Owner = this
+            };
+            if (win.ShowDialog() == true)
+            {
+                await LoadUtilityExpensesAsync();
+            }
+        }
+
+        private void ViewBillImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button { DataContext: UtilityExpense expense } && expense.HasBillImage)
+            {
+                try
+                {
+                    var p = new System.Diagnostics.Process
+                    {
+                        StartInfo = new System.Diagnostics.ProcessStartInfo(expense.BillImagePath!)
+                        {
+                            UseShellExecute = true
+                        }
+                    };
+                    p.Start();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Could not open bill image.\n\n{ex.Message}", "Image Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void DeleteUtilityExpenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button { DataContext: UtilityExpense expense })
+            {
+                var res = MessageBox.Show($"Are you sure you want to delete the expense for '{expense.Location}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (res == MessageBoxResult.Yes)
+                {
+                    await UtilityExpenseRepository.DeleteExpenseAsync(expense.Id);
+                    await LoadUtilityExpensesAsync();
                 }
             }
         }

@@ -561,6 +561,26 @@
                         </StackPanel>
                     </ToggleButton>
 
+                    <!-- NavUtilityExpenses (NEW) -->
+                    <ToggleButton x:Name="NavUtilityExpenses"
+                                  Style="{StaticResource TopNavItemStyle}"
+                                  Checked="NavItem_Checked"
+                                  Tag="utility-expenses">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="15"
+                                     Height="15"
+                                     Margin="0,0,7,0">
+                                <Canvas Width="24"
+                                        Height="24">
+                                    <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Utility Expenses"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+
                     <!-- NavUtilityReminder (NEW) -->
                     <ToggleButton x:Name="NavUtilityReminder"
                                   Style="{StaticResource TopNavItemStyle}"
@@ -3051,8 +3071,7 @@
                                                             Style="{StaticResource OutlineButton}"
                                                             Padding="10,6"
                                                             FontSize="12"
-                                                            Background="#DC2626"
-                                                            Foreground="White"
+                                                            Foreground="{StaticResource ErrorBrush}"
                                                             Click="DeleteProductButton_Click"/>
                                                 </StackPanel>
                                             </DataTemplate>
@@ -3305,6 +3324,165 @@
                         </Border>
                     </Border>
 
+                    <!-- ============ UTILITY EXPENSES PANEL ============ -->
+                    <Border x:Name="PanelUtilityExpenses"
+                            Style="{StaticResource PlaceholderPanel}"
+                            Padding="0"
+                            Visibility="Collapsed"
+                            BorderThickness="0"
+                            Background="Transparent">
+                        <!-- Main Utility Expenses Card -->
+                        <Border Background="White"
+                                BorderBrush="{StaticResource LineBrush}"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                Padding="24">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="1"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Card Header & Controls -->
+                                <Grid Grid.Row="0" Margin="0,0,0,16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Title -->
+                                    <TextBlock Grid.Column="0"
+                                               Text="Utility Expenses"
+                                               FontFamily="{StaticResource HeadingFont}"
+                                               FontWeight="Bold"
+                                               FontSize="16.5"
+                                               Foreground="{StaticResource InkBrush}"
+                                               VerticalAlignment="Center"/>
+
+                                    <!-- Controls: Search & + Create Utility Expense -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <!-- Search Box Container -->
+                                        <Border Background="#FFFCF9"
+                                                BorderBrush="{StaticResource LineBrush}"
+                                                BorderThickness="1.5"
+                                                CornerRadius="10"
+                                                Width="230"
+                                                Height="38"
+                                                Margin="0,0,12,0"
+                                                Padding="10,0">
+                                            <Grid VerticalAlignment="Center">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Path Grid.Column="0"
+                                                      Data="M10 17 A7 7 0 1 1 17 10 A7 7 0 0 1 10 17 Z M15 15 L20 20"
+                                                      Stroke="{StaticResource InkSoftBrush}"
+                                                      StrokeThickness="1.6"
+                                                      Width="14"
+                                                      Height="14"
+                                                      Stretch="Uniform"
+                                                      Margin="2,0,8,0"
+                                                      VerticalAlignment="Center"/>
+                                                <Grid Grid.Column="1">
+                                                    <TextBlock Text="Search location, bill no..."
+                                                               Visibility="{Binding Text, ElementName=UtilityExpensesSearchBox, Converter={StaticResource StringToVisibilityConverter}}"
+                                                               Foreground="{StaticResource InkSoftBrush}"
+                                                               FontSize="12.5"
+                                                               VerticalAlignment="Center"
+                                                               IsHitTestVisible="False"/>
+                                                    <TextBox x:Name="UtilityExpensesSearchBox"
+                                                             Background="Transparent"
+                                                             BorderThickness="0"
+                                                             FontSize="12.5"
+                                                             Foreground="{StaticResource InkBrush}"
+                                                             VerticalContentAlignment="Center"
+                                                             Padding="0"
+                                                             TextChanged="UtilityExpensesSearchBox_TextChanged"/>
+                                                </Grid>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Add Button -->
+                                        <Button Content="+ Create Utility Expense"
+                                                Style="{StaticResource MiniButton}"
+                                                Height="38"
+                                                Padding="16,0"
+                                                Click="AddUtilityExpenseButton_Click"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Divider -->
+                                <Border Grid.Row="1" Background="{StaticResource LineBrush}"/>
+
+                                <!-- DataGrid Table -->
+                                <Grid Grid.Row="2" Margin="0,14,0,0">
+                                    <DataGrid x:Name="UtilityExpensesGrid"
+                                              Style="{StaticResource AppDataGrid}"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                              MaxHeight="560">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Category"
+                                                                Binding="{Binding CategoryDisplay}"
+                                                                Width="1.1*"/>
+                                            <DataGridTextColumn Header="Location"
+                                                                Binding="{Binding LocationDisplay}"
+                                                                Width="1.6*"/>
+                                            <DataGridTextColumn Header="Expense Date"
+                                                                Binding="{Binding ExpenseDateDisplay}"
+                                                                Width="1.1*"/>
+                                            <DataGridTextColumn Header="Amount"
+                                                                Binding="{Binding AmountDisplay}"
+                                                                Width="1*"/>
+                                            <DataGridTextColumn Header="Bill No"
+                                                                Binding="{Binding BillNoDisplay}"
+                                                                Width="1.1*"/>
+                                            <DataGridTextColumn Header="Description"
+                                                                Binding="{Binding DescriptionDisplay}"
+                                                                Width="1.8*"/>
+                                            <DataGridTextColumn Header="Created At"
+                                                                Binding="{Binding CreatedAtDisplay}"
+                                                                Width="1.2*"/>
+                                            <DataGridTemplateColumn Header="Actions" Width="1.8*">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Button Content="{Binding BillImageButtonText}"
+                                                                    IsEnabled="{Binding HasBillImage}"
+                                                                    Style="{StaticResource OutlineButton}"
+                                                                    Padding="10,4"
+                                                                    Margin="0,0,8,0"
+                                                                    FontSize="12"
+                                                                    Click="ViewBillImageButton_Click"/>
+                                                            <Button Content="Delete"
+                                                                    Style="{StaticResource OutlineButton}"
+                                                                    Padding="10,4"
+                                                                    FontSize="12"
+                                                                    Foreground="{StaticResource ErrorBrush}"
+                                                                    Click="DeleteUtilityExpenseButton_Click"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <!-- Empty Text -->
+                                    <TextBlock x:Name="UtilityExpensesEmptyText"
+                                               Text="No utility expenses logged yet. Click '+ Create Utility Expense' above to add one."
+                                               Visibility="Collapsed"
+                                               Foreground="{StaticResource InkSoftBrush}"
+                                               FontSize="13.5"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Margin="0,40"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </Border>
+
                     <!-- ============ UTILITY REMINDER PANEL ============ -->
                     <Border x:Name="PanelUtilityReminder"
                             Style="{StaticResource PlaceholderPanel}"
@@ -3506,6 +3684,7 @@
                                                                 Style="{StaticResource OutlineButton}"
                                                                 Padding="14,4"
                                                                 FontSize="12"
+                                                                Foreground="{StaticResource ErrorBrush}"
                                                                 Click="DeleteReminderButton_Click"
                                                                 Tag="{Binding Id}"/>
                                                     </StackPanel>
