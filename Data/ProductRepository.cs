@@ -16,7 +16,7 @@ namespace StockPortalApp.Data
         private static string ConnectionString =>
             ConfigurationManager.ConnectionStrings["StockPortalDb"].ConnectionString;
 
-        public static async Task<List<ProductCategory>> GetCategoriesAsync()
+        public static async Task<List<ProductCategory>> GetCategoriesAsync(string? searchQuery = null, string statusFilter = "ALL")
         {
             var list = new List<ProductCategory>();
 
@@ -24,15 +24,34 @@ namespace StockPortalApp.Data
             await conn.OpenAsync();
 
             using var cmd = new SqlCommand("dbo.sp_GetProductCategories", conn) { CommandType = CommandType.StoredProcedure };
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                cmd.Parameters.AddWithValue("@SearchQuery", searchQuery);
+            }
+            if (!string.IsNullOrEmpty(statusFilter) && statusFilter != "ALL")
+            {
+                cmd.Parameters.AddWithValue("@StatusFilter", statusFilter);
+            }
+
             using var reader = await cmd.ExecuteReaderAsync();
+
+            int idOrd = reader.GetOrdinal("Id");
+            int nameOrd = reader.GetOrdinal("Name");
+            int prefixOrd = reader.GetOrdinal("Prefix");
+            int activeOrd = -1;
+            int countOrd = -1;
+            try { activeOrd = reader.GetOrdinal("IsActive"); } catch { }
+            try { countOrd = reader.GetOrdinal("ProductCount"); } catch { }
 
             while (await reader.ReadAsync())
             {
                 list.Add(new ProductCategory
                 {
-                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                    Name = reader.GetString(reader.GetOrdinal("Name")),
-                    Prefix = reader.GetString(reader.GetOrdinal("Prefix")),
+                    Id = reader.GetInt32(idOrd),
+                    Name = reader.GetString(nameOrd),
+                    Prefix = reader.GetString(prefixOrd),
+                    IsActive = activeOrd >= 0 && !reader.IsDBNull(activeOrd) ? reader.GetBoolean(activeOrd) : true,
+                    ProductCount = countOrd >= 0 && !reader.IsDBNull(countOrd) ? reader.GetInt32(countOrd) : 0,
                 });
             }
 
@@ -43,19 +62,27 @@ namespace StockPortalApp.Data
         /// Adds a new category. Mirrors the HTML's generateCategoryPrefix(): first 3 letters
         /// of the name, uppercased; if that prefix is already used, falls back to 2 letters + a number.
         /// </summary>
-        public static async Task<ProductCategory> AddCategoryAsync(string name, IEnumerable<string> existingPrefixes)
+        public static async Task<ProductCategory> AddCategoryAsync(string name, IEnumerable<string> existingPrefixes, string? customPrefix = null, bool isActive = true)
         {
-            string baseLetters = new string(name.Where(char.IsLetter).ToArray()).ToUpperInvariant();
-            if (baseLetters.Length > 3) baseLetters = baseLetters[..3];
-            if (baseLetters.Length == 0) baseLetters = "CAT";
-
-            string prefix = baseLetters;
-            var used = new HashSet<string>(existingPrefixes, StringComparer.OrdinalIgnoreCase);
-            int n = 1;
-            while (used.Contains(prefix))
+            string prefix;
+            if (!string.IsNullOrWhiteSpace(customPrefix))
             {
-                n++;
-                prefix = baseLetters[..Math.Min(2, baseLetters.Length)] + n;
+                prefix = customPrefix.Trim().ToUpperInvariant();
+            }
+            else
+            {
+                string baseLetters = new string(name.Where(char.IsLetter).ToArray()).ToUpperInvariant();
+                if (baseLetters.Length > 3) baseLetters = baseLetters[..3];
+                if (baseLetters.Length == 0) baseLetters = "CAT";
+
+                prefix = baseLetters;
+                var used = new HashSet<string>(existingPrefixes, StringComparer.OrdinalIgnoreCase);
+                int n = 1;
+                while (used.Contains(prefix))
+                {
+                    n++;
+                    prefix = baseLetters[..Math.Min(2, baseLetters.Length)] + n;
+                }
             }
 
             using var conn = new SqlConnection(ConnectionString);
@@ -64,16 +91,36 @@ namespace StockPortalApp.Data
             using var cmd = new SqlCommand("dbo.sp_AddProductCategory", conn) { CommandType = CommandType.StoredProcedure };
             cmd.Parameters.AddWithValue("@Name", name);
             cmd.Parameters.AddWithValue("@Prefix", prefix);
+            cmd.Parameters.AddWithValue("@IsActive", isActive);
 
             using var reader = await cmd.ExecuteReaderAsync();
             await reader.ReadAsync();
 
+            int idOrd = reader.GetOrdinal("Id");
+            int nameOrd = reader.GetOrdinal("Name");
+            int prefixOrd = reader.GetOrdinal("Prefix");
+            int activeOrd = -1;
+            try { activeOrd = reader.GetOrdinal("IsActive"); } catch { }
+
             return new ProductCategory
             {
-                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                Name = reader.GetString(reader.GetOrdinal("Name")),
-                Prefix = reader.GetString(reader.GetOrdinal("Prefix")),
+                Id = reader.GetInt32(idOrd),
+                Name = reader.GetString(nameOrd),
+                Prefix = reader.GetString(prefixOrd),
+                IsActive = activeOrd >= 0 && !reader.IsDBNull(activeOrd) ? reader.GetBoolean(activeOrd) : isActive,
             };
+        }
+
+        public static async Task ToggleCategoryStatusAsync(int id, bool isActive)
+        {
+            using var conn = new SqlConnection(ConnectionString);
+            await conn.OpenAsync();
+
+            using var cmd = new SqlCommand("dbo.sp_ToggleCategoryStatus", conn) { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@IsActive", isActive);
+
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public static async Task<List<Product>> GetProductsAsync()
@@ -98,6 +145,9 @@ namespace StockPortalApp.Data
                     }
                     catch { }
                 }
+
+                int productTypeOrd = -1;
+                try { productTypeOrd = reader.GetOrdinal("ProductType"); } catch { }
 
                 while (await reader.ReadAsync())
                 {
@@ -138,7 +188,9 @@ namespace StockPortalApp.Data
                         Unit = reader.GetString(reader.GetOrdinal("Unit")),
                         MinQty = reader.IsDBNull(reader.GetOrdinal("MinQty")) ? null : reader.GetDecimal(reader.GetOrdinal("MinQty")),
                         AvgPrice = reader.IsDBNull(reader.GetOrdinal("AvgPrice")) ? null : reader.GetDecimal(reader.GetOrdinal("AvgPrice")),
-                        CreatedAt = createdAtStr
+                        ProductType = productTypeOrd >= 0 && !reader.IsDBNull(productTypeOrd) ? reader.GetString(productTypeOrd) : "",
+                        CreatedAt = createdAtStr,
+                        IsActive = !reader.IsDBNull(reader.GetOrdinal("IsActive")) && reader.GetBoolean(reader.GetOrdinal("IsActive")),
                     });
                 }
             }
@@ -195,6 +247,8 @@ namespace StockPortalApp.Data
             cmd.Parameters.AddWithValue("@Unit", product.Unit);
             cmd.Parameters.AddWithValue("@MinQty", (object?)product.MinQty ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@AvgPrice", (object?)product.AvgPrice ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@ProductType", (object?)product.ProductType ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@IsActive", product.IsActive);
 
             using var reader = await cmd.ExecuteReaderAsync();
             await reader.ReadAsync();
@@ -209,6 +263,21 @@ namespace StockPortalApp.Data
 
             using var cmd = new SqlCommand("DELETE FROM dbo.Products WHERE Id = @Id", conn);
             cmd.Parameters.AddWithValue("@Id", id);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public static async Task ToggleProductStatusAsync(int id, bool isActive)
+        {
+            using var conn = new SqlConnection(ConnectionString);
+            await conn.OpenAsync();
+
+            using var cmd = new SqlCommand("dbo.sp_ToggleProductStatus", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@IsActive", isActive);
+
             await cmd.ExecuteNonQueryAsync();
         }
     }

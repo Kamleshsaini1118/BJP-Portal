@@ -34,7 +34,7 @@ namespace StockPortalApp
             _editingHeader = headerToEdit;
 
             CategoryNames.Clear();
-            foreach (var c in categories) CategoryNames.Add(c.Name);
+            foreach (var c in categories.Where(c => c.IsActive)) CategoryNames.Add(c.Name);
             if (!CategoryNames.Contains("+ Add New Category"))
             {
                 CategoryNames.Add("+ Add New Category");
@@ -100,7 +100,7 @@ namespace StockPortalApp
                 var freshProds = await ProductRepository.GetProductsAsync();
 
                 _categories.Clear();
-                _categories.AddRange(freshCats);
+                _categories.AddRange(freshCats.Where(c => c.IsActive));
 
                 _products.Clear();
                 _products.AddRange(freshProds);

@@ -83,7 +83,7 @@ namespace StockPortalApp
                 if (dialog.ShowDialog() == true && dialog.SavedVendor != null)
                 {
                     var freshVendors = await VendorRepository.GetVendorsAsync();
-                    var vList = freshVendors.Select(v => v.Name).ToList();
+                    var vList = freshVendors.Where(v => v.IsActive).Select(v => v.Name).ToList();
                     if (!vList.Contains("+ Add New Vendor"))
                     {
                         vList.Add("+ Add New Vendor");

@@ -101,6 +101,7 @@ namespace StockPortalApp
                 BankAccount = BankAccountBox.Text.Trim(),
                 BankIfsc = BankIfscBox.Text.Trim(),
                 BankBranch = BankBranchBox.Text.Trim(),
+                IsActive = _editingVendor?.IsActive ?? true,
             };
 
             SubmitButton.IsEnabled = false;

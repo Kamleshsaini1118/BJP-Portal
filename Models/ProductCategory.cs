@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +11,11 @@ namespace StockPortalApp.Models
         public int Id { get; set; }
         public string Name { get; set; } = "";
         public string Prefix { get; set; } = "";
+        public bool IsActive { get; set; } = true;
+        public int ProductCount { get; set; } = 0;
+
+        public string StatusDisplay => IsActive ? "Active" : "Inactive";
+        public string ActionButtonText => IsActive ? "Deactivate" : "Activate";
 
         public override string ToString() => Name; // so it displays nicely in a ComboBox
     }

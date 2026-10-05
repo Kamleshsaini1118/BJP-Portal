@@ -53,7 +53,7 @@ namespace StockPortalApp
             _products = products;
             _editingPurchase = purchaseToEdit;
             _editingDistributionId = purchaseToEdit?.DistributionId;
-            CategoryNames = categories.Select(c => c.Name).ToList();
+            CategoryNames = categories.Where(c => c.IsActive).Select(c => c.Name).ToList();
             _vendorNames = new List<string>(vendorNames);
             _officeNames = new List<string>(officeNames);
 

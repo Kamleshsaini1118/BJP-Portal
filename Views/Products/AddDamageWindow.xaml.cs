@@ -84,7 +84,7 @@ namespace StockPortalApp
 
         private void RebuildCategoryCombo()
         {
-            var catNames = _categories.Select(c => c.Name).ToList();
+            var catNames = _categories.Where(c => c.IsActive).Select(c => c.Name).ToList();
             if (!catNames.Contains("+ Add New Category"))
             {
                 catNames.Add("+ Add New Category");
@@ -143,7 +143,7 @@ namespace StockPortalApp
                 var freshProds = await ProductRepository.GetProductsAsync();
 
                 _categories.Clear();
-                _categories.AddRange(freshCats);
+                _categories.AddRange(freshCats.Where(c => c.IsActive));
 
                 _products.Clear();
                 _products.AddRange(freshProds);

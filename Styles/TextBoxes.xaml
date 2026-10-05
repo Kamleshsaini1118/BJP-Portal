@@ -141,9 +141,20 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ContentPresenter Grid.Column="0" Content="{TemplateBinding SelectionBoxItem}"
-                                                   ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                   VerticalAlignment="Center"/>
+                                <Grid Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="PlaceholderText"
+                                               Text="{TemplateBinding Tag}"
+                                               Foreground="{StaticResource InkSoftBrush}"
+                                               VerticalAlignment="Center"
+                                               FontSize="{TemplateBinding FontSize}"
+                                               FontFamily="{TemplateBinding FontFamily}"
+                                               IsHitTestVisible="False"
+                                               Opacity="0.65"
+                                               Visibility="Collapsed"/>
+                                    <ContentPresenter Content="{TemplateBinding SelectionBoxItem}"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      VerticalAlignment="Center"/>
+                                </Grid>
                                 <Path Grid.Column="1" Data="M1 1L5 5L9 1" Stroke="{StaticResource InkSoftBrush}"
                                       StrokeThickness="1.6" VerticalAlignment="Center" Margin="6,0,2,0"/>
                             </Grid>
@@ -158,6 +169,12 @@
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="SelectedItem" Value="{x:Null}">
+                            <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="SelectedIndex" Value="-1">
+                            <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible"/>
+                        </Trigger>
                         <Trigger Property="IsFocused" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource SaffronDeepBrush}"/>
                         </Trigger>

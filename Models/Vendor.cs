@@ -20,5 +20,6 @@ namespace StockPortalApp.Models
         public string? BankIfsc { get; set; }
         public string? BankBranch { get; set; }
         public string CreatedAt { get; set; } = "";
+        public bool IsActive { get; set; } = true;
     }
 }

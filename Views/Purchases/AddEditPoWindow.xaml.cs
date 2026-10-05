@@ -45,7 +45,7 @@ namespace StockPortalApp
             _editingPo = poToEdit;
 
             CategoryNames.Clear();
-            foreach (var c in categories) CategoryNames.Add(c.Name);
+            foreach (var c in categories.Where(c => c.IsActive)) CategoryNames.Add(c.Name);
             if (!CategoryNames.Contains("+ Add New Category"))
             {
                 CategoryNames.Add("+ Add New Category");
@@ -119,7 +119,7 @@ namespace StockPortalApp
                 _products.AddRange(freshProds);
 
                 CategoryNames.Clear();
-                foreach (var cat in freshCats)
+                foreach (var cat in freshCats.Where(c => c.IsActive))
                 {
                     CategoryNames.Add(cat.Name);
                 }
@@ -214,7 +214,7 @@ namespace StockPortalApp
                 if (dialog.ShowDialog() == true && dialog.SavedVendor != null)
                 {
                     var freshVendors = await VendorRepository.GetVendorsAsync();
-                    var vList = freshVendors.Select(v => v.Name).ToList();
+                    var vList = freshVendors.Where(v => v.IsActive).Select(v => v.Name).ToList();
                     if (!vList.Contains("+ Add New Vendor"))
                     {
                         vList.Add("+ Add New Vendor");

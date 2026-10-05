@@ -24,6 +24,7 @@ namespace StockPortalApp
     {
         private static readonly string[] Units = { "Packet", "Pcs", "Kg", "Box", "Litre", "Dozen", "MTR" };
         private static readonly ProductCategory AddNewSentinel = new() { Id = -1, Name = "+ Add New Category" };
+        private static readonly string[] ProductTypes = { "Fixed Asset", "Moving Asset" };
 
         private readonly Product? _editingProduct;
         private List<ProductCategory> _categories = new();
@@ -32,13 +33,19 @@ namespace StockPortalApp
         /// <summary>The saved product, set only if the user clicked Submit successfully.</summary>
         public Product? SavedProduct { get; private set; }
 
+
+
         public AddEditProductWindow(List<ProductCategory> categories, Product? productToEdit = null)
         {
             InitializeComponent();
             _editingProduct = productToEdit;
             _categories = categories;
 
+
             UnitCombo.ItemsSource = Units;
+
+            ProductTypeCombo.ItemsSource = ProductTypes;
+
 
             RebuildCategoryDropdown();
 
@@ -57,12 +64,13 @@ namespace StockPortalApp
                 // CodePreviewBox.Text = _editingProduct.ProductCode; // fixed, doesn't change on edit
                 MinQtyBox.Text = _editingProduct.MinQty?.ToString(CultureInfo.InvariantCulture) ?? "";
                 AvgPriceBox.Text = _editingProduct.AvgPrice?.ToString(CultureInfo.InvariantCulture) ?? "";
+                ProductTypeCombo.SelectedItem = _editingProduct.ProductType;
             }
         }
 
         private void RebuildCategoryDropdown()
         {
-            var items = new List<ProductCategory>(_categories) { AddNewSentinel };
+            var items = new List<ProductCategory>(_categories.Where(c => c.IsActive || (_editingProduct != null && c.Id == _editingProduct.CategoryId))) { AddNewSentinel };
             CategoryCombo.ItemsSource = items;
         }
 
@@ -146,6 +154,13 @@ namespace StockPortalApp
                 return;
             }
 
+            if (ProductTypeCombo.SelectedItem is not string productType || string.IsNullOrWhiteSpace(productType))
+            {
+                MessageBox.Show("Select a product type before saving.", "Missing information",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             decimal? minQty = decimal.TryParse(MinQtyBox.Text.Trim(), out var mq) ? mq : null;
             decimal? avgPrice = decimal.TryParse(AvgPriceBox.Text.Trim(), out var ap) ? ap : null;
 
@@ -157,7 +172,9 @@ namespace StockPortalApp
                 Name = name,
                 Unit = unit,
                 MinQty = minQty,
-                AvgPrice = avgPrice
+                AvgPrice = avgPrice,
+                ProductType = productType,
+                IsActive = _editingProduct?.IsActive ?? true
             };
 
             SubmitButton.IsEnabled = false;

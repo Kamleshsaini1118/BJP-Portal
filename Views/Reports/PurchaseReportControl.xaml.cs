@@ -31,6 +31,15 @@ namespace StockPortalApp.Views.Reports
                 VendorFilterCombo.ItemsSource = vendorList;
                 VendorFilterCombo.SelectedIndex = 0;
 
+                // 2. Load Items / Products (NEW)
+                var products = await ProductRepository.GetProductsAsync();
+                var itemList = new List<string> { "Any item" };
+                itemList.AddRange(products.Select(p => p.Name).Distinct().OrderBy(n => n));
+                ItemFilterCombo.ItemsSource = itemList;
+                ItemFilterCombo.SelectedIndex = 0;
+                // 3. Apply filters
+                // await ApplyFiltersAsync();
+
                 _allPurchases = await PurchaseRepository.GetPurchasesAsync(null, null, null, null);
                 ApplyFilters();
             }
@@ -45,6 +54,7 @@ namespace StockPortalApp.Views.Reports
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             VendorFilterCombo.SelectedIndex = 0;
+            ItemFilterCombo.SelectedIndex = 0;
             ReceivedAgainstCombo.SelectedIndex = 0;
             PaymentModeCombo.SelectedIndex = 0;
             FromDatePicker.SelectedDate = null;
@@ -56,6 +66,12 @@ namespace StockPortalApp.Views.Reports
 
         private void ApplyFilters()
         {
+            // Get Selected Product / Item
+            string? selectedProduct = ItemFilterCombo.SelectedItem as string;
+            if (selectedProduct == "Any item") selectedProduct = null;
+            // Fetch purchases matching the selected product from DB
+            // _allPurchases = await PurchaseRepository.GetPurchasesAsync(null, selectedProduct, null, null);
+
             if (_allPurchases == null) return;
 
             string? selectedVendor = VendorFilterCombo.SelectedItem as string;

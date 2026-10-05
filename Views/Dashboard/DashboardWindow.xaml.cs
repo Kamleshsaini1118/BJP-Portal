@@ -2,11 +2,15 @@ using System;
 using StockPortalApp.Data;
 using StockPortalApp.Helpers;
 using StockPortalApp.Models;
+using StockPortalApp.Views.FixedAssets;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Collections.ObjectModel;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace StockPortalApp
 {
@@ -29,11 +33,16 @@ namespace StockPortalApp
             ["add-purchase"] = "Add Purchase",
             ["add-export"] = "Add Distribution",
             ["add-vendor"] = "Add Vendor",
+            ["category"] = "Category",
             ["add-product"] = "Add Product",
             ["quotation"] = "Quotations",
             ["utility-expenses"] = "Utility Expenses",
             ["utility-reminder"] = "Utility Reminders",
             ["reports"] = "Reports",
+        };
+        private readonly System.Windows.Threading.DispatcherTimer _fixedAssetsPopupTimer = new()
+        {
+            Interval = System.TimeSpan.FromMilliseconds(220)
         };
 
         public DashboardWindow(Window loginWindow, string displayName)
@@ -43,6 +52,14 @@ namespace StockPortalApp
             SetUser(displayName);
             Loaded += DashboardWindow_Loaded;
 
+            _fixedAssetsPopupTimer.Tick += (s, e) =>
+            {
+                _fixedAssetsPopupTimer.Stop();
+                if (!(NavFixedAssets?.IsMouseOver ?? false) && !(FixedAssetsPopupBorder?.IsMouseOver ?? false))
+                {
+                    if (FixedAssetsPopup != null) FixedAssetsPopup.IsOpen = false;
+                }
+            };
         }
 
         private async void DashboardWindow_Loaded(object sender, RoutedEventArgs e)
@@ -53,9 +70,11 @@ namespace StockPortalApp
                 if (DashDateTo != null) DashDateTo.SelectedDate = null;
 
                 await LoadVendorsAsync();
+                await LoadCategoriesAsync();
                 await LoadProductsAndCategoriesAsync();
                 await LoadBatchesAsync();
                 await LoadFixedAssetsAsync();
+                await LoadFixedAssetRoomsAsync();
                 await LoadStockReportAsync();
                 await LoadDamageAsync();
                 IssueReportTypeCombo.ItemsSource = new[] { "All", "Pending", "Deposited" };
@@ -336,7 +355,7 @@ namespace StockPortalApp
 
         private async void AddNewIssueButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new AddEditIssueWindow(_categories, _allProducts) { Owner = this };
+            var dialog = new AddEditIssueWindow(_categories.Where(c => c.IsActive).ToList(), _allProducts.Where(p => p.IsActive).ToList()) { Owner = this };
             var result = dialog.ShowDialog();
             await LoadProductsAndCategoriesAsync();
             if (result == true)
@@ -587,7 +606,7 @@ namespace StockPortalApp
         private async void AddDistributionButton_Click(object sender, RoutedEventArgs e)
         {
             var officeNames = (await OfficeRepository.GetOfficesAsync()).Select(o => o.Name).ToList();
-            var dialog = new AddEditDistributionWindow(_categories, _allProducts, officeNames) { Owner = this };
+            var dialog = new AddEditDistributionWindow(_categories.Where(c => c.IsActive).ToList(), _allProducts.Where(p => p.IsActive).ToList(), officeNames) { Owner = this };
             var result = dialog.ShowDialog();
             await LoadProductsAndCategoriesAsync();
             if (result == true)
@@ -745,10 +764,10 @@ namespace StockPortalApp
 
         private async void AddPurchaseButton_Click(object sender, RoutedEventArgs e)
         {
-            var vendorNames = _allVendors.Select(v => v.Name).ToList();
+            var vendorNames = _allVendors.Where(v => v.IsActive).Select(v => v.Name).ToList();
             var officeNames = (await OfficeRepository.GetOfficesAsync()).Select(o => o.Name).ToList();
             var poReferences = (await PurchaseOrderRepository.GetOrdersAsync(null, null, null, null)).Select(po => po.PoReference).ToList();
-            var dialog = new AddEditPurchaseWindow(vendorNames, _categories, _allProducts, officeNames, poReferences: poReferences) { Owner = this };
+            var dialog = new AddEditPurchaseWindow(vendorNames, _categories.Where(c => c.IsActive).ToList(), _allProducts.Where(p => p.IsActive).ToList(), officeNames, poReferences: poReferences) { Owner = this };
             if (dialog.ShowDialog() == true)
             {
                 await LoadVendorsAsync(); // a new vendor may have been added inline
@@ -1081,8 +1100,8 @@ namespace StockPortalApp
 
         private async void AddPoButton_Click(object sender, RoutedEventArgs e)
         {
-            var vendorNames = _allVendors.Select(v => v.Name).ToList();
-            var dialog = new AddEditPoWindow(vendorNames, _categories, _allProducts) { Owner = this };
+            var vendorNames = _allVendors.Where(v => v.IsActive).Select(v => v.Name).ToList();
+            var dialog = new AddEditPoWindow(vendorNames, _categories, _allProducts.Where(p => p.IsActive).ToList()) { Owner = this };
             var result = dialog.ShowDialog();
             await LoadVendorsAsync();
             await LoadProductsAndCategoriesAsync();
@@ -1246,7 +1265,7 @@ namespace StockPortalApp
 
         private async void AddDamageButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new AddDamageWindow(_categories, _allProducts) { Owner = this };
+            var dialog = new AddDamageWindow(_categories.Where(c => c.IsActive).ToList(), _allProducts.Where(p => p.IsActive).ToList()) { Owner = this };
             var result = dialog.ShowDialog();
             await LoadProductsAndCategoriesAsync(); // Always reload categories and products in real time
             if (result == true)
@@ -1499,23 +1518,17 @@ namespace StockPortalApp
         // ================= FIXED ASSETS =================
 
         private List<FixedAssetSummary> _allAssets = new();
+        private List<FixedAssetRoom> _allRooms = new();
 
         private async System.Threading.Tasks.Task LoadFixedAssetsAsync()
         {
             try
             {
                 _allAssets = await FixedAssetRepository.GetSummaryAsync();
-
-                var totalQty = _allAssets.Sum(a => a.Qty);
-                var totalValue = _allAssets.Sum(a => a.Value);
-                AssetsTotalQtyText.Text = totalQty.ToString("N0");
-                AssetsTotalValueText.Text = FormatAssetValue(totalValue);
-
-                ApplyAssetsFilter();
             }
-            catch (System.Exception ex)
+            catch
             {
-                MessageBox.Show($"Could not load fixed assets.\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                // Summary used for dashboard overview cards
             }
         }
 
@@ -1526,25 +1539,993 @@ namespace StockPortalApp
             return $"₹{value:N0}";
         }
 
-        private void ApplyAssetsFilter()
+        private async System.Threading.Tasks.Task LoadFixedAssetRoomsAsync()
         {
-            var query = AssetsSearchBox.Text?.Trim().ToLowerInvariant() ?? "";
-            AssetsGrid.ItemsSource = string.IsNullOrEmpty(query)
-                ? _allAssets
-                : _allAssets.Where(a =>
-                    a.Category.ToLowerInvariant().Contains(query) ||
-                    a.Item.ToLowerInvariant().Contains(query) ||
-                    a.Code.ToLowerInvariant().Contains(query)
+            try
+            {
+                _allRooms = await FixedAssetRepository.GetFixedAssetRoomsAsync();
+                ApplyRoomsFilter();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Could not load fixed asset rooms.\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ApplyRoomsFilter()
+        {
+            var query = RoomsSearchBox?.Text?.Trim().ToLowerInvariant() ?? "";
+            if (RoomsGrid == null) return;
+
+            RoomsGrid.ItemsSource = string.IsNullOrEmpty(query)
+                ? _allRooms
+                : _allRooms.Where(r =>
+                    (r.Karyalya?.ToLowerInvariant().Contains(query) ?? false) ||
+                    (r.Department?.ToLowerInvariant().Contains(query) ?? false) ||
+                    (r.RoomNo?.ToLowerInvariant().Contains(query) ?? false) ||
+                    (r.ItemsSummary?.ToLowerInvariant().Contains(query) ?? false)
                   ).ToList();
         }
 
-        private void AssetsSearchBox_TextChanged(object sender, TextChangedEventArgs e) => ApplyAssetsFilter();
-
-        private void AssetItemButton_Click(object sender, RoutedEventArgs e)
+        private void RoomsSearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (sender is not Button { DataContext: FixedAssetSummary asset }) return;
+            ApplyRoomsFilter();
+        }
 
-            new AssetDistributionWindow(asset.Item) { Owner = this }.ShowDialog();
+        private async void MapFixedAssetButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new MapFixedAssetWindow { Owner = this };
+            if (dialog.ShowDialog() == true)
+            {
+                await LoadFixedAssetRoomsAsync();
+                await LoadFixedAssetsAsync();
+            }
+        }
+
+        private async void EditRoomButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: FixedAssetRoom room }) return;
+
+            var dialog = new MapFixedAssetWindow(room) { Owner = this };
+            if (dialog.ShowDialog() == true)
+            {
+                await LoadFixedAssetRoomsAsync();
+                await LoadFixedAssetsAsync();
+            }
+        }
+
+        private void ViewRoomAssetsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: FixedAssetRoom room }) return;
+
+            FilterReportByRoom(room);
+        }
+
+        private void NavFixedAssetsContainer_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            _fixedAssetsPopupTimer.Stop();
+            if (FixedAssetsPopup != null)
+            {
+                FixedAssetsPopup.IsOpen = true;
+            }
+        }
+
+        private void NavFixedAssetsContainer_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            _fixedAssetsPopupTimer.Stop();
+            _fixedAssetsPopupTimer.Start();
+        }
+
+        private void FixedAssetsPopup_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            _fixedAssetsPopupTimer.Stop();
+        }
+
+        private void FixedAssetsPopup_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            _fixedAssetsPopupTimer.Stop();
+            _fixedAssetsPopupTimer.Start();
+        }
+
+        private void NavFixedAssets_Click(object sender, RoutedEventArgs e)
+        {
+            _fixedAssetsPopupTimer.Stop();
+            NavFixedAssets.IsChecked = true;
+            NavItem_Checked(NavFixedAssets, e);
+            if (FixedAssetsPopup != null)
+            {
+                FixedAssetsPopup.IsOpen = !FixedAssetsPopup.IsOpen;
+            }
+        }
+
+        private void MenuMapFixedAsset_Click(object sender, RoutedEventArgs e)
+        {
+            _fixedAssetsPopupTimer.Stop();
+            if (FixedAssetsPopup != null) FixedAssetsPopup.IsOpen = false;
+            NavFixedAssets.IsChecked = true;
+            NavItem_Checked(NavFixedAssets, e);
+        }
+
+        private void MenuFixedAssetReport_Click(object sender, RoutedEventArgs e)
+        {
+            _fixedAssetsPopupTimer.Stop();
+            if (FixedAssetsPopup != null) FixedAssetsPopup.IsOpen = false;
+            ShowFixedAssetReportView();
+        }
+
+        // ================= FIXED ASSET REPORT =================
+        private List<FixedAssetReportItem> _allReportItems = new();
+        private List<FixedAssetKaryalyaGroup> _karyalyaGroups = new();
+        private List<FixedAssetDepartmentGroup> _departmentGroups = new();
+        private List<FixedAssetItemGroup> _itemGroups = new();
+        private string _activeReportTab = "all"; // "all", "karyalya", "department", "item"
+        private FixedAssetRoom? _currentFilteredRoom = null;
+
+        public void FilterReportByRoom(FixedAssetRoom room)
+        {
+            _currentFilteredRoom = room;
+
+            string cleanRoomNo = (room.RoomNo ?? "").Trim();
+            string roomDisplay = string.IsNullOrWhiteSpace(cleanRoomNo)
+                ? "No Room"
+                : (cleanRoomNo.StartsWith("Room", StringComparison.OrdinalIgnoreCase) ? cleanRoomNo : $"Room No. {cleanRoomNo}");
+
+            string karyalyaPart = string.IsNullOrWhiteSpace(room.Karyalya) ? "" : $" ({room.Karyalya})";
+            string label = $"{roomDisplay}, {room.Department}{karyalyaPart}".Trim();
+
+            if (RoomFilterLabelText != null)
+            {
+                RoomFilterLabelText.Text = label;
+            }
+            if (RoomFilterBanner != null)
+            {
+                RoomFilterBanner.Visibility = Visibility.Visible;
+            }
+
+            ShowFixedAssetReportView(clearRoomFilter: false);
+            SwitchReportTab("all");
+            ApplyFixedAssetReportFilter();
+        }
+
+        private async void EditFilteredRoomButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentFilteredRoom == null) return;
+
+            var room = _allRooms.FirstOrDefault(r => r.RoomId == _currentFilteredRoom.RoomId) ?? _currentFilteredRoom;
+            var dialog = new MapFixedAssetWindow(room) { Owner = this };
+            if (dialog.ShowDialog() == true)
+            {
+                await LoadFixedAssetRoomsAsync();
+                await LoadFixedAssetsAsync();
+                await LoadFixedAssetReportAsync();
+
+                var updatedRoom = _allRooms.FirstOrDefault(r => r.RoomId == _currentFilteredRoom.RoomId);
+                if (updatedRoom != null)
+                {
+                    FilterReportByRoom(updatedRoom);
+                }
+                else
+                {
+                    ClearFilteredRoomButton_Click(sender, e);
+                }
+            }
+        }
+
+        private void ClearFilteredRoomButton_Click(object sender, RoutedEventArgs e)
+        {
+            _currentFilteredRoom = null;
+            if (RoomFilterBanner != null)
+            {
+                RoomFilterBanner.Visibility = Visibility.Collapsed;
+            }
+            if (CountTabAllAssets != null)
+            {
+                CountTabAllAssets.Text = _allReportItems.Count.ToString();
+            }
+            ApplyFixedAssetReportFilter();
+        }
+
+        public void ShowFixedAssetReportView(bool clearRoomFilter = true)
+        {
+            _fixedAssetsPopupTimer.Stop();
+            if (FixedAssetsPopup != null) FixedAssetsPopup.IsOpen = false;
+
+            if (clearRoomFilter && _currentFilteredRoom != null)
+            {
+                _currentFilteredRoom = null;
+                if (RoomFilterBanner != null)
+                {
+                    RoomFilterBanner.Visibility = Visibility.Collapsed;
+                }
+            }
+
+            NavFixedAssets.IsChecked = true;
+            foreach (var other in new[]
+                     {
+                         NavDashboard, NavFoodPackets, NavStockReport, NavDamage, NavIssueBorrow,
+                         NavRaisePo, NavAddPurchase, NavQuotation, NavAddDistribution, NavAddVendor,
+                         NavCategory,
+                         NavAddProduct, NavUtilityExpenses, NavUtilityReminder, NavReports
+                     })
+            {
+                other.IsChecked = false;
+            }
+
+            foreach (var panel in new[]
+                     {
+                         PanelDashboard, PanelFoodPackets, PanelFixedAssets, PanelFixedAssetReport, PanelStockReport, PanelDamage, PanelIssueBorrow,
+                         PanelRaisePo, PanelAddPurchase, PanelQuotation, PanelAddDistribution, PanelAddVendor,
+                         PanelCategory,
+                         PanelAddProduct, PanelUtilityExpenses, PanelUtilityReminder, PanelReports
+                     })
+            {
+                panel.Visibility = Visibility.Collapsed;
+            }
+
+            PanelFixedAssetReport.Visibility = Visibility.Visible;
+            PanelTitleText.Text = "Fixed Asset Report";
+
+            _ = LoadFixedAssetReportAsync();
+        }
+
+        private async System.Threading.Tasks.Task LoadFixedAssetReportAsync()
+        {
+            try
+            {
+                _allReportItems = await FixedAssetRepository.GetFixedAssetReportItemsAsync();
+
+                // Compute Karyalya Groups
+                _karyalyaGroups = _allReportItems
+                    .GroupBy(x => new { x.KaryalyaId, x.KaryalyaName })
+                    .Select(g =>
+                    {
+                        var itemCounts = g.GroupBy(x => x.ItemName)
+                                          .Select(ig => $"{ig.Key} × {ig.Count()}")
+                                          .ToList();
+                        return new FixedAssetKaryalyaGroup
+                        {
+                            KaryalyaId = g.Key.KaryalyaId,
+                            KaryalyaName = string.IsNullOrWhiteSpace(g.Key.KaryalyaName) ? "Unassigned" : g.Key.KaryalyaName,
+                            DepartmentsCount = g.Select(x => x.DepartmentId).Distinct().Count(),
+                            RoomsCount = g.Select(x => x.RoomId).Distinct().Count(),
+                            TotalAssets = g.Count(),
+                            ActiveCount = g.Count(x => x.IsActiveStatus),
+                            DamagedCount = g.Count(x => !x.IsActiveStatus),
+                            ItemsSummary = string.Join(", ", itemCounts)
+                        };
+                    })
+                    .OrderBy(k => k.KaryalyaName)
+                    .ToList();
+
+                // Compute Department Groups
+                _departmentGroups = _allReportItems
+                    .GroupBy(x => new { x.DepartmentId, x.DepartmentName, x.KaryalyaName, x.InchargeDisplay })
+                    .Select(g =>
+                    {
+                        var itemCounts = g.GroupBy(x => x.ItemName)
+                                          .Select(ig => $"{ig.Key} × {ig.Count()}")
+                                          .ToList();
+                        return new FixedAssetDepartmentGroup
+                        {
+                            DepartmentId = g.Key.DepartmentId,
+                            KaryalyaName = string.IsNullOrWhiteSpace(g.Key.KaryalyaName) ? "Unassigned" : g.Key.KaryalyaName,
+                            DepartmentName = string.IsNullOrWhiteSpace(g.Key.DepartmentName) ? "Unassigned" : g.Key.DepartmentName,
+                            InchargeDisplay = g.Key.InchargeDisplay,
+                            RoomsCount = g.Select(x => x.RoomId).Distinct().Count(),
+                            TotalAssets = g.Count(),
+                            ActiveCount = g.Count(x => x.IsActiveStatus),
+                            DamagedCount = g.Count(x => !x.IsActiveStatus),
+                            ItemsSummary = string.Join(", ", itemCounts)
+                        };
+                    })
+                    .OrderBy(d => d.KaryalyaName).ThenBy(d => d.DepartmentName)
+                    .ToList();
+
+                // Compute Item Groups
+                _itemGroups = _allReportItems
+                    .GroupBy(x => new { x.ProductId, x.ItemName, x.ProductCode })
+                    .Select(g =>
+                    {
+                        var codes = g.Select(x => x.ItemUniqueCode).Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+                        return new FixedAssetItemGroup
+                        {
+                            ProductId = g.Key.ProductId,
+                            ItemName = string.IsNullOrWhiteSpace(g.Key.ItemName) ? "Unknown Item" : g.Key.ItemName,
+                            ProductCode = g.Key.ProductCode,
+                            KaryalyasCount = g.Select(x => x.KaryalyaId).Distinct().Count(),
+                            RoomsCount = g.Select(x => x.RoomId).Distinct().Count(),
+                            TotalAssets = g.Count(),
+                            ActiveCount = g.Count(x => x.IsActiveStatus),
+                            DamagedCount = g.Count(x => !x.IsActiveStatus),
+                            UniqueCodesSummary = string.Join(", ", codes)
+                        };
+                    })
+                    .OrderBy(i => i.ItemName)
+                    .ToList();
+
+                // Update Badges
+                if (CountTabAllAssets != null) CountTabAllAssets.Text = _allReportItems.Count.ToString();
+                if (CountTabKaryalyaWise != null) CountTabKaryalyaWise.Text = _karyalyaGroups.Count.ToString();
+                if (CountTabDepartmentWise != null) CountTabDepartmentWise.Text = _departmentGroups.Count.ToString();
+                if (CountTabItemWise != null) CountTabItemWise.Text = _itemGroups.Count.ToString();
+
+                ApplyFixedAssetReportFilter();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Could not load fixed asset report.\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void SwitchReportTab(string tab)
+        {
+            _activeReportTab = tab;
+
+            var inkBrush = (System.Windows.Media.SolidColorBrush)FindResource("InkBrush");
+            var lineBrush = (System.Windows.Media.SolidColorBrush)FindResource("LineBrush");
+            var peachBrush = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FFEDD5"));
+            var darkOrangeBrush = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#C2410C"));
+            var activeOrangeBrush = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#EA580C"));
+            var whiteBrush = System.Windows.Media.Brushes.White;
+
+            void StyleTab(Button btn, TextBlock txt, Border badge, TextBlock countTxt, bool isActive)
+            {
+                if (btn == null) return;
+                btn.Background = isActive ? activeOrangeBrush : whiteBrush;
+                btn.BorderBrush = isActive ? System.Windows.Media.Brushes.Transparent : lineBrush;
+                btn.BorderThickness = isActive ? new Thickness(0) : new Thickness(1);
+                txt.Foreground = isActive ? whiteBrush : inkBrush;
+                badge.Background = isActive ? darkOrangeBrush : peachBrush;
+                countTxt.Foreground = isActive ? whiteBrush : darkOrangeBrush;
+            }
+
+            StyleTab(BtnTabAllAssets, TxtTabAllAssets, BadgeTabAllAssets, CountTabAllAssets, tab == "all");
+            StyleTab(BtnTabKaryalyaWise, TxtTabKaryalyaWise, BadgeTabKaryalyaWise, CountTabKaryalyaWise, tab == "karyalya");
+            StyleTab(BtnTabDepartmentWise, TxtTabDepartmentWise, BadgeTabDepartmentWise, CountTabDepartmentWise, tab == "department");
+            StyleTab(BtnTabItemWise, TxtTabItemWise, BadgeTabItemWise, CountTabItemWise, tab == "item");
+
+            if (ReportAllAssetsGrid != null) ReportAllAssetsGrid.Visibility = tab == "all" ? Visibility.Visible : Visibility.Collapsed;
+            if (ReportKaryalyaGrid != null) ReportKaryalyaGrid.Visibility = tab == "karyalya" ? Visibility.Visible : Visibility.Collapsed;
+            if (ReportDepartmentGrid != null) ReportDepartmentGrid.Visibility = tab == "department" ? Visibility.Visible : Visibility.Collapsed;
+            if (ReportItemGrid != null) ReportItemGrid.Visibility = tab == "item" ? Visibility.Visible : Visibility.Collapsed;
+
+            ApplyFixedAssetReportFilter();
+        }
+
+        private void TabAllAssets_Click(object sender, RoutedEventArgs e) => SwitchReportTab("all");
+        private void TabKaryalyaWise_Click(object sender, RoutedEventArgs e) => SwitchReportTab("karyalya");
+        private void TabDepartmentWise_Click(object sender, RoutedEventArgs e) => SwitchReportTab("department");
+        private void TabItemWise_Click(object sender, RoutedEventArgs e) => SwitchReportTab("item");
+
+        private void ApplyFixedAssetReportFilter()
+        {
+            var query = FixedAssetReportSearchBox?.Text?.Trim().ToLowerInvariant() ?? "";
+
+            var allItems = _allReportItems;
+            if (_currentFilteredRoom != null)
+            {
+                allItems = allItems.Where(x => x.RoomId == _currentFilteredRoom.RoomId).ToList();
+                if (CountTabAllAssets != null)
+                {
+                    CountTabAllAssets.Text = allItems.Count.ToString();
+                }
+            }
+
+            if (_activeReportTab == "all" && ReportAllAssetsGrid != null)
+            {
+                ReportAllAssetsGrid.ItemsSource = string.IsNullOrEmpty(query)
+                    ? allItems
+                    : allItems.Where(x =>
+                        (x.ItemUniqueCode?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.ItemName?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.ProductCode?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.KaryalyaName?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.DepartmentName?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.RoomNo?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.Status?.ToLowerInvariant().Contains(query) ?? false)
+                    ).ToList();
+            }
+            else if (_activeReportTab == "karyalya" && ReportKaryalyaGrid != null)
+            {
+                ReportKaryalyaGrid.ItemsSource = string.IsNullOrEmpty(query)
+                    ? _karyalyaGroups
+                    : _karyalyaGroups.Where(x =>
+                        (x.KaryalyaName?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.ItemsSummary?.ToLowerInvariant().Contains(query) ?? false)
+                    ).ToList();
+            }
+            else if (_activeReportTab == "department" && ReportDepartmentGrid != null)
+            {
+                ReportDepartmentGrid.ItemsSource = string.IsNullOrEmpty(query)
+                    ? _departmentGroups
+                    : _departmentGroups.Where(x =>
+                        (x.KaryalyaName?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.DepartmentName?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.InchargeDisplay?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.ItemsSummary?.ToLowerInvariant().Contains(query) ?? false)
+                    ).ToList();
+            }
+            else if (_activeReportTab == "item" && ReportItemGrid != null)
+            {
+                ReportItemGrid.ItemsSource = string.IsNullOrEmpty(query)
+                    ? _itemGroups
+                    : _itemGroups.Where(x =>
+                        (x.ItemName?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.ProductCode?.ToLowerInvariant().Contains(query) ?? false) ||
+                        (x.UniqueCodesSummary?.ToLowerInvariant().Contains(query) ?? false)
+                    ).ToList();
+            }
+        }
+
+        private void FixedAssetReportSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ApplyFixedAssetReportFilter();
+        }
+
+        private void ReportViewGroupAssetsButton_Click(object sender, RoutedEventArgs e)
+        {
+            string filterText = "";
+            if (sender is Button btn)
+            {
+                if (btn.DataContext is FixedAssetKaryalyaGroup kg)
+                    filterText = kg.KaryalyaName;
+                else if (btn.DataContext is FixedAssetDepartmentGroup dg)
+                    filterText = dg.DepartmentName;
+                else if (btn.DataContext is FixedAssetItemGroup ig)
+                    filterText = ig.ItemName;
+            }
+
+            SwitchReportTab("all");
+            if (FixedAssetReportSearchBox != null)
+            {
+                FixedAssetReportSearchBox.Text = filterText;
+            }
+        }
+
+        private async void ReportEditItemButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: FixedAssetReportItem item }) return;
+
+            var room = _allRooms.FirstOrDefault(r => r.RoomId == item.RoomId) 
+                       ?? new FixedAssetRoom { RoomId = item.RoomId, KaryalyaId = item.KaryalyaId, DepartmentId = item.DepartmentId, RoomNo = item.RoomNo };
+
+            var dialog = new MapFixedAssetWindow(room) { Owner = this };
+            if (dialog.ShowDialog() == true)
+            {
+                await LoadFixedAssetReportAsync();
+                await LoadFixedAssetRoomsAsync();
+            }
+        }
+
+        // ================= MOVE ASSET & HISTORY UI =================
+        private List<Karyalya> _karyalyas = new();
+        private FixedAssetReportItem? _activeMoveItem;
+        private FixedAssetReportItem? _activeDamageItem;
+        private readonly ObservableCollection<DamageImageItem> _damageAttachedImages = new();
+
+        private void RebuildMoveKaryalyaCombo(int? selectId = null)
+        {
+            var list = new List<Karyalya>(_karyalyas);
+            list.Add(new Karyalya { Id = -999, Name = "+ Add New Karyalya" });
+
+            MoveKaryalyaCombo.ItemsSource = list;
+            if (selectId.HasValue && selectId.Value > 0)
+            {
+                MoveKaryalyaCombo.SelectedItem = list.FirstOrDefault(k => k.Id == selectId.Value);
+            }
+            else
+            {
+                MoveKaryalyaCombo.SelectedItem = null;
+            }
+        }
+
+        private async System.Threading.Tasks.Task RebuildMoveDepartmentComboAsync(int karyalyaId, int? selectId = null)
+        {
+            try
+            {
+                var depts = await FixedAssetRepository.GetDepartmentsByKaryalyaAsync(karyalyaId);
+                var list = new List<Department>(depts);
+                list.Add(new Department { Id = -999, Name = "+ Add New Department", KaryalyaId = karyalyaId });
+
+                MoveDepartmentCombo.ItemsSource = list;
+                MoveDepartmentCombo.Tag = "Select Department / Vibhag";
+                MoveDepartmentCombo.IsEnabled = true;
+
+                if (selectId.HasValue && selectId.Value > 0)
+                {
+                    MoveDepartmentCombo.SelectedItem = list.FirstOrDefault(d => d.Id == selectId.Value);
+                }
+                else
+                {
+                    MoveDepartmentCombo.SelectedItem = null;
+                }
+            }
+            catch
+            {
+                MoveDepartmentCombo.ItemsSource = null;
+                MoveDepartmentCombo.SelectedItem = null;
+                MoveDepartmentCombo.Tag = "Select Department / Vibhag";
+                MoveDepartmentCombo.IsEnabled = true;
+            }
+        }
+
+        private async System.Threading.Tasks.Task AddNewKaryalyaFlowAsync()
+        {
+            var dialog = new AddKaryalyaWindow { Owner = this };
+            if (dialog.ShowDialog() == true && dialog.SavedKaryalya != null)
+            {
+                _karyalyas = await FixedAssetRepository.GetKaryalyasAsync();
+                RebuildMoveKaryalyaCombo(dialog.SavedKaryalya.Id);
+            }
+        }
+
+        private async void AddNewKaryalya_Click(object sender, RoutedEventArgs e)
+        {
+            await AddNewKaryalyaFlowAsync();
+        }
+
+        private async System.Threading.Tasks.Task AddNewDepartmentFlowAsync()
+        {
+            if (MoveKaryalyaCombo.SelectedItem is not Karyalya currentKaryalya || currentKaryalya.Id <= 0)
+            {
+                MessageBox.Show("Please select a Karyalya first before adding a Department.", "Select Karyalya", MessageBoxButton.OK, MessageBoxImage.Information);
+                MoveKaryalyaCombo.Focus();
+                return;
+            }
+
+            var dialog = new AddDepartmentWindow(_karyalyas, currentKaryalya.Id) { Owner = this };
+            if (dialog.ShowDialog() == true && dialog.SavedDepartment != null)
+            {
+                await RebuildMoveDepartmentComboAsync(currentKaryalya.Id, dialog.SavedDepartment.Id);
+            }
+        }
+
+        private async void AddNewDepartment_Click(object sender, RoutedEventArgs e)
+        {
+            await AddNewDepartmentFlowAsync();
+        }
+
+        private async void ReportMoveItemButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: FixedAssetReportItem item }) return;
+
+            var win = new MoveAssetWindow(item) { Owner = this };
+            if (win.ShowDialog() == true)
+            {
+                await LoadFixedAssetReportAsync();
+                await LoadFixedAssetRoomsAsync();
+            }
+        }
+
+        private async void MoveKaryalyaCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (MoveKaryalyaCombo.SelectedItem is Karyalya selectedKaryalya)
+            {
+                if (selectedKaryalya.Id == -999)
+                {
+                    MoveKaryalyaCombo.SelectedItem = null;
+                    await AddNewKaryalyaFlowAsync();
+                    return;
+                }
+
+                await RebuildMoveDepartmentComboAsync(selectedKaryalya.Id);
+            }
+            else
+            {
+                MoveDepartmentCombo.ItemsSource = null;
+                MoveDepartmentCombo.SelectedItem = null;
+                MoveDepartmentCombo.Tag = "Select Karyalya first";
+                MoveDepartmentCombo.IsEnabled = false;
+            }
+        }
+
+        private async void MoveDepartmentCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (MoveDepartmentCombo.SelectedItem is Department selectedDept)
+            {
+                if (selectedDept.Id == -999)
+                {
+                    MoveDepartmentCombo.SelectedItem = null;
+                    await AddNewDepartmentFlowAsync();
+                }
+            }
+        }
+
+        private async void SaveMoveButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_activeMoveItem == null) return;
+
+            if (MoveKaryalyaCombo.SelectedItem is not Karyalya targetKaryalya || targetKaryalya.Id <= 0)
+            {
+                MessageBox.Show("Please select a New Karyalya.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MoveKaryalyaCombo.Focus();
+                return;
+            }
+
+            if (MoveDepartmentCombo.SelectedItem is not Department targetDept || targetDept.Id <= 0)
+            {
+                MessageBox.Show("Please select a New Department / Vibhag.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MoveDepartmentCombo.Focus();
+                return;
+            }
+
+            DateTime moveDate = MoveDatePicker.SelectedDate ?? DateTime.Today;
+            string roomNo = MoveRoomNoBox.Text?.Trim() ?? "";
+            string remarks = MoveRemarksBox.Text?.Trim() ?? "";
+
+            try
+            {
+                bool success = await FixedAssetRepository.MoveAssetItemAsync(
+                    _activeMoveItem,
+                    targetKaryalya.Id,
+                    targetKaryalya.Name,
+                    targetDept.Id,
+                    targetDept.Name,
+                    roomNo,
+                    moveDate,
+                    remarks);
+
+                if (success)
+                {
+                    MoveAssetModalOverlay.Visibility = Visibility.Collapsed;
+                    _activeMoveItem = null;
+
+                    await LoadFixedAssetReportAsync();
+                    await LoadFixedAssetRoomsAsync();
+                }
+                else
+                {
+                    MessageBox.Show("Failed to move asset. Please try again.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not move asset.\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CloseMoveModal_Click(object sender, RoutedEventArgs e)
+        {
+            MoveAssetModalOverlay.Visibility = Visibility.Collapsed;
+            _activeMoveItem = null;
+        }
+
+        private void ReportHistoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: FixedAssetReportItem item }) return;
+
+            var win = new AssetHistoryWindow(item) { Owner = this };
+            win.ShowDialog();
+        }
+
+        private void CloseHistoryModal_Click(object sender, RoutedEventArgs e)
+        {
+            AssetHistoryModalOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        // ================= MARK ASSET DAMAGED UI =================
+        private async void ReportMarkDamagedButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: FixedAssetReportItem item }) return;
+
+            if (!item.IsActiveStatus)
+            {
+                var confirm = MessageBox.Show(
+                    $"Asset '{item.ItemUniqueCode} - {item.ItemName}' is currently marked as Damaged.\n\nDo you want to restore it to Active?",
+                    "Restore Status",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (confirm == MessageBoxResult.Yes)
+                {
+                    RestoreAssetToActive(item);
+                }
+                return;
+            }
+
+            var win = new MarkAssetDamagedWindow(item) { Owner = this };
+            if (win.ShowDialog() == true)
+            {
+                await LoadFixedAssetReportAsync();
+                await LoadFixedAssetRoomsAsync();
+                await LoadDamageAsync();
+            }
+        }
+
+        private async void RestoreAssetToActive(FixedAssetReportItem item)
+        {
+            try
+            {
+                bool success = await FixedAssetRepository.UpdateItemStatusAsync(item, "Active");
+                if (success)
+                {
+                    await LoadFixedAssetReportAsync();
+                    await LoadFixedAssetRoomsAsync();
+                }
+                else
+                {
+                    MessageBox.Show("Could not update item status.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not update item status.\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void UploadDamagePhotos_Click(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Select Damage Photos",
+                Filter = "Image Files (*.jpg;*.jpeg;*.png;*.bmp;*.gif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif|All Files (*.*)|*.*",
+                Multiselect = true
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                foreach (var filePath in openFileDialog.FileNames)
+                {
+                    if (string.IsNullOrWhiteSpace(filePath) || !System.IO.File.Exists(filePath)) continue;
+                    if (_damageAttachedImages.Any(img => string.Equals(img.FilePath, filePath, StringComparison.OrdinalIgnoreCase))) continue;
+
+                    try
+                    {
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.UriSource = new Uri(filePath, UriKind.Absolute);
+                        bitmap.EndInit();
+                        bitmap.Freeze();
+
+                        _damageAttachedImages.Add(new DamageImageItem
+                        {
+                            FilePath = filePath,
+                            PreviewImage = bitmap
+                        });
+                    }
+                    catch { }
+                }
+
+                UpdateDamagePhotoUI();
+            }
+        }
+
+        private void ClearDamagePhotos_Click(object sender, RoutedEventArgs e)
+        {
+            _damageAttachedImages.Clear();
+            UpdateDamagePhotoUI();
+        }
+
+        private void UpdateDamagePhotoUI()
+        {
+            if (_damageAttachedImages.Count > 0)
+            {
+                DamagePhotosListContainer.Visibility = Visibility.Visible;
+                DamagePhotosCountText.Text = $"{_damageAttachedImages.Count} photo(s) selected";
+                DamagePhotoUploadText.Text = "Click to attach more photos";
+            }
+            else
+            {
+                DamagePhotosListContainer.Visibility = Visibility.Collapsed;
+                DamagePhotoUploadText.Text = "Click to upload damage photos — multiple allowed";
+            }
+        }
+
+        private void CloseMarkDamagedModal_Click(object sender, RoutedEventArgs e)
+        {
+            MarkDamagedModalOverlay.Visibility = Visibility.Collapsed;
+            _activeDamageItem = null;
+        }
+
+        private async void SubmitMarkDamaged_Click(object sender, RoutedEventArgs e)
+        {
+            if (_activeDamageItem == null) return;
+
+            var name = DamageReporteeNameBox.Text.Trim();
+            var number = DamageReporteeNumberBox.Text.Trim();
+            var position = DamageReporteePositionBox.Text.Trim();
+            var remark = DamageRemarkBox.Text.Trim();
+            var damageDate = DamageDatePicker.SelectedDate ?? DateTime.Today;
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                MessageBox.Show("Please enter Reportee Name.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                DamageReporteeNameBox.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(number))
+            {
+                MessageBox.Show("Please enter Reportee Number.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                DamageReporteeNumberBox.Focus();
+                return;
+            }
+
+            if (!NumericInput.IsValidMobileNumber(number, isOptional: false))
+            {
+                MessageBox.Show("Enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.", "Invalid Mobile Number", MessageBoxButton.OK, MessageBoxImage.Warning);
+                DamageReporteeNumberBox.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(position))
+            {
+                MessageBox.Show("Please enter Reportee Position.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                DamageReporteePositionBox.Focus();
+                return;
+            }
+
+            try
+            {
+                string? combinedImages = _damageAttachedImages.Count > 0
+                    ? string.Join(";", _damageAttachedImages.Select(i => i.FilePath))
+                    : null;
+
+                // 1. Update Fixed Asset Item Status to "Damaged" and write to history
+                await FixedAssetRepository.UpdateItemStatusAsync(_activeDamageItem, "Damaged");
+
+                // 2. Add entry to DamageRecords so it appears in the Damage page!
+                string itemLocationDesc = $"[{_activeDamageItem.ItemUniqueCode} - {_activeDamageItem.KaryalyaName} > {_activeDamageItem.DepartmentName}, {_activeDamageItem.RoomNoDisplay}]";
+                string finalRemark = string.IsNullOrWhiteSpace(remark)
+                    ? itemLocationDesc
+                    : $"{itemLocationDesc} {remark}";
+
+                await DamageRepository.AddRecordAsync(
+                    category: "Fixed Asset",
+                    itemName: $"{_activeDamageItem.ItemName} ({_activeDamageItem.ItemUniqueCode})",
+                    qty: 1,
+                    reporteeName: name,
+                    reporteeNumber: number,
+                    reporteePosition: position,
+                    remark: finalRemark,
+                    imagePath: combinedImages);
+
+                MarkDamagedModalOverlay.Visibility = Visibility.Collapsed;
+                _activeDamageItem = null;
+
+                // 3. Refresh Fixed Asset report and Damage page
+                await LoadFixedAssetReportAsync();
+                await LoadFixedAssetRoomsAsync();
+                await LoadDamageAsync();
+
+                MessageBox.Show("Asset marked as Damaged and added to Damage records successfully!", "Damage Reported", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not report asset damage.\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ModalOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource == MoveAssetModalOverlay)
+            {
+                MoveAssetModalOverlay.Visibility = Visibility.Collapsed;
+                _activeMoveItem = null;
+            }
+            else if (e.OriginalSource == AssetHistoryModalOverlay)
+            {
+                AssetHistoryModalOverlay.Visibility = Visibility.Collapsed;
+            }
+            else if (e.OriginalSource == MarkDamagedModalOverlay)
+            {
+                MarkDamagedModalOverlay.Visibility = Visibility.Collapsed;
+                _activeDamageItem = null;
+            }
+        }
+
+        private void ModalCard_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        private void ExportFixedAssetReportButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var rows = new List<List<string>>();
+                string sheetName = "Fixed Assets";
+                var headers = new List<string>();
+
+                if (_activeReportTab == "all")
+                {
+                    sheetName = "All Assets";
+                    headers = new List<string> { "Unique Code", "Item", "Item Code", "Karyalya", "Department / Vibhag", "Room No.", "Mapped On", "Status", "Last Updated" };
+                    var items = (ReportAllAssetsGrid.ItemsSource as IEnumerable<FixedAssetReportItem>) ?? _allReportItems;
+                    foreach (var i in items)
+                    {
+                        rows.Add(new List<string>
+                        {
+                            i.ItemUniqueCode,
+                            i.ItemName,
+                            i.ProductCode,
+                            i.KaryalyaName,
+                            i.DepartmentName,
+                            i.RoomNoDisplay,
+                            i.MappedOnDisplay,
+                            i.Status,
+                            i.LastUpdatedDisplay
+                        });
+                    }
+                }
+                else if (_activeReportTab == "karyalya")
+                {
+                    sheetName = "Karyalya Wise";
+                    headers = new List<string> { "Karyalya", "Departments", "Rooms", "Total Assets", "Active", "Damaged", "Items" };
+                    var items = (ReportKaryalyaGrid.ItemsSource as IEnumerable<FixedAssetKaryalyaGroup>) ?? _karyalyaGroups;
+                    foreach (var k in items)
+                    {
+                        rows.Add(new List<string>
+                        {
+                            k.KaryalyaName,
+                            k.DepartmentsCount.ToString(),
+                            k.RoomsCount.ToString(),
+                            k.TotalAssets.ToString(),
+                            k.ActiveCount.ToString(),
+                            k.DamagedCount.ToString(),
+                            k.ItemsSummary
+                        });
+                    }
+                }
+                else if (_activeReportTab == "department")
+                {
+                    sheetName = "Department Wise";
+                    headers = new List<string> { "Karyalya", "Department / Vibhag", "Incharge", "Rooms", "Total Assets", "Active", "Damaged", "Items" };
+                    var items = (ReportDepartmentGrid.ItemsSource as IEnumerable<FixedAssetDepartmentGroup>) ?? _departmentGroups;
+                    foreach (var d in items)
+                    {
+                        rows.Add(new List<string>
+                        {
+                            d.KaryalyaName,
+                            d.DepartmentName,
+                            d.InchargeDisplay,
+                            d.RoomsCount.ToString(),
+                            d.TotalAssets.ToString(),
+                            d.ActiveCount.ToString(),
+                            d.DamagedCount.ToString(),
+                            d.ItemsSummary
+                        });
+                    }
+                }
+                else if (_activeReportTab == "item")
+                {
+                    sheetName = "Item Wise";
+                    headers = new List<string> { "Item", "Item Code", "Karyalyas", "Rooms", "Total Assets", "Active", "Damaged", "Unique Codes" };
+                    var items = (ReportItemGrid.ItemsSource as IEnumerable<FixedAssetItemGroup>) ?? _itemGroups;
+                    foreach (var it in items)
+                    {
+                        rows.Add(new List<string>
+                        {
+                            it.ItemName,
+                            it.ProductCode,
+                            it.KaryalyasCount.ToString(),
+                            it.RoomsCount.ToString(),
+                            it.TotalAssets.ToString(),
+                            it.ActiveCount.ToString(),
+                            it.DamagedCount.ToString(),
+                            it.UniqueCodesSummary
+                        });
+                    }
+                }
+
+                string safeSheet = sheetName.Replace(" ", "-").ToLowerInvariant();
+                string fileName = $"fixed-assets-{safeSheet}-{DateTime.Now:dd-MM-yyyy_HH-mm-ss}.xlsx";
+                ExcelExportHelper.Export(fileName, sheetName, headers, rows);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Could not export fixed asset report.\n\n{ex.Message}", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void MenuAddFixedAssetPurchase_Click(object sender, RoutedEventArgs e)
+        {
+            _fixedAssetsPopupTimer.Stop();
+            if (FixedAssetsPopup != null) FixedAssetsPopup.IsOpen = false;
+            NavAddPurchase.IsChecked = true;
+            NavItem_Checked(NavAddPurchase, e);
+            AddPurchaseButton_Click(sender, e);
         }
 
         // ================= FOOD PACKETS =================
@@ -1579,7 +2560,7 @@ namespace StockPortalApp
 
         private async void NewBatchButton_Click(object sender, RoutedEventArgs e)
         {
-            var vendorNames = _allVendors.Select(v => v.Name).ToList();
+            var vendorNames = _allVendors.Where(v => v.IsActive).Select(v => v.Name).ToList();
             var dialog = new NewBatchWindow(vendorNames) { Owner = this };
             if (dialog.ShowDialog() == true)
             {
@@ -1675,6 +2656,35 @@ namespace StockPortalApp
             new VendorDetailsWindow(vendor) { Owner = this }.ShowDialog();
         }
 
+        private async void ToggleVendorStatusButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: Vendor vendor } || !vendor.Id.HasValue)
+                return;
+
+            bool newStatus = !vendor.IsActive;
+            string actionText = vendor.IsActive ? "deactivate" : "activate";
+
+            var confirm = MessageBox.Show(
+                $"Are you sure you want to {actionText} '{vendor.Name}'?",
+                $"Confirm {char.ToUpper(actionText[0]) + actionText[1..]}",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (confirm != MessageBoxResult.Yes)
+                return;
+
+            try
+            {
+                await VendorRepository.ToggleVendorStatusAsync(vendor.Id.Value, newStatus);
+                await LoadVendorsAsync(); // Reloads vendors to refresh UI
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not update vendor status.\n\n{ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void ExportVendorsButton_Click(object sender, RoutedEventArgs e)
         {
             var rows = new List<List<string>>();
@@ -1686,6 +2696,84 @@ namespace StockPortalApp
             string fileName = $"vendors-{DateTime.Now:dd-MM-yyyy_HH-mm-ss}.xlsx";
             ExcelExportHelper.Export(fileName, "Vendors",
                 new List<string> { "Vendor Name", "GST", "Contact Person", "Number", "Email", "Address", "Bank Holder", "Account", "IFSC Code", "Branch", "CreatedAt" }, rows);
+        }
+
+        // ================= CATEGORIES =================
+
+        private async System.Threading.Tasks.Task LoadCategoriesAsync()
+        {
+            try
+            {
+                var query = CategorySearchBox?.Text?.Trim() ?? "";
+                string statusFilter = "ALL";
+                if (CategoryStatusFilterCombo?.SelectedItem is ComboBoxItem item && item.Content is string text)
+                {
+                    statusFilter = text switch
+                    {
+                        "Active" => "ACTIVE",
+                        "Inactive" => "INACTIVE",
+                        _ => "ALL"
+                    };
+                }
+
+                _categories = await ProductRepository.GetCategoriesAsync(query, statusFilter);
+                if (CategoriesGrid != null)
+                {
+                    CategoriesGrid.ItemsSource = _categories;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Could not load categories.\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CategorySearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _ = LoadCategoriesAsync();
+        }
+
+        private void CategoryStatusFilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _ = LoadCategoriesAsync();
+        }
+
+        private async void AddCategoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new AddCategoryWindow(_categories) { Owner = this };
+            if (dialog.ShowDialog() == true)
+            {
+                await LoadCategoriesAsync();
+                await LoadProductsAndCategoriesAsync();
+            }
+        }
+
+        private async void ToggleCategoryStatusButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not ProductCategory cat) return;
+
+            bool newStatus = !cat.IsActive;
+            string actionWord = newStatus ? "activate" : "deactivate";
+
+            var result = MessageBox.Show(
+                $"Are you sure you want to {actionWord} the category '{cat.Name}'?\n\n" +
+                (newStatus ? "Products in this category will be available again." : "Deactivating a category hides it — and every product in it — from new purchases, POs, distributions, issues and damage entries. Past records and reports are not affected."),
+                $"Confirm {char.ToUpper(actionWord[0]) + actionWord[1..]}",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            try
+            {
+                await ProductRepository.ToggleCategoryStatusAsync(cat.Id, newStatus);
+                await LoadCategoriesAsync();
+                await LoadProductsAndCategoriesAsync();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Failed to change category status.\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // ================= PRODUCTS =================
@@ -1712,7 +2800,8 @@ namespace StockPortalApp
                 : _allProducts.Where(p =>
                     (p.Name?.ToLowerInvariant().Contains(query) ?? false) ||
                     (p.ProductCode?.ToLowerInvariant().Contains(query) ?? false) ||
-                    (p.Category?.ToLowerInvariant().Contains(query) ?? false)
+                    (p.Category?.ToLowerInvariant().Contains(query) ?? false) || 
+                    (p.ProductType?.ToLowerInvariant().Contains(query) ?? false)
                   ).ToList();
         }
 
@@ -1720,7 +2809,7 @@ namespace StockPortalApp
 
         private async void AddProductButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new AddEditProductWindow(_categories) { Owner = this };
+            var dialog = new AddEditProductWindow(_categories.Where(c => c.IsActive).ToList()) { Owner = this };
             if (dialog.ShowDialog() == true)
             {
                 await LoadProductsAndCategoriesAsync();
@@ -1768,12 +2857,41 @@ namespace StockPortalApp
             }
         }
 
+        private async void ToggleProductStatusButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: Product product } || !product.Id.HasValue)
+                return;
+
+            bool newStatus = !product.IsActive;
+            string actionText = product.IsActive ? "deactivate" : "activate";
+
+            var confirm = MessageBox.Show(
+                $"Are you sure you want to {actionText} '{product.Name}'?",
+                $"Confirm {char.ToUpper(actionText[0]) + actionText[1..]}",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (confirm != MessageBoxResult.Yes)
+                return;
+
+            try
+            {
+                await ProductRepository.ToggleProductStatusAsync(product.Id.Value, newStatus);
+                await LoadProductsAndCategoriesAsync(); // Reloads products to refresh UI
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not update product status.\n\n{ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void ExportProductsButton_Click(object sender, RoutedEventArgs e)
         {
             var rows = new List<List<string>>();
             foreach (var p in ProductsGrid.ItemsSource?.Cast<Product>() ?? Enumerable.Empty<Product>())
             {
-                rows.Add(new List<string> { p.ProductCode, p.Name, p.Category, p.Unit, p.MinQtyDisplay, p.AvgPriceDisplay, p.CreatedAt });
+                rows.Add(new List<string> { p.ProductCode, p.Name, p.Category, p.Unit, p.MinQtyDisplay, p.AvgPriceDisplay, p.ProductType, p.CreatedAt });
             }
             // Current date + current time
             string fileName = $"products-{DateTime.Now:dd-MM-yyyy_HH-mm-ss}.xlsx";
@@ -1802,6 +2920,7 @@ namespace StockPortalApp
                      {
                          NavDashboard, NavFoodPackets, NavFixedAssets, NavStockReport, NavDamage, NavIssueBorrow,
                          NavRaisePo, NavAddPurchase, NavQuotation, NavAddDistribution, NavAddVendor,
+                         NavCategory,
                          NavAddProduct, NavUtilityExpenses, NavUtilityReminder, NavReports
                      })
             {
@@ -1810,8 +2929,9 @@ namespace StockPortalApp
 
             foreach (var panel in new[]
                      {
-                         PanelDashboard, PanelFoodPackets, PanelFixedAssets, PanelStockReport, PanelDamage, PanelIssueBorrow,
+                         PanelDashboard, PanelFoodPackets, PanelFixedAssets, PanelFixedAssetReport, PanelStockReport, PanelDamage, PanelIssueBorrow,
                          PanelRaisePo, PanelAddPurchase, PanelQuotation, PanelAddDistribution, PanelAddVendor,
+                         PanelCategory,
                          PanelAddProduct, PanelUtilityExpenses, PanelUtilityReminder, PanelReports
                      })
             {
@@ -1831,6 +2951,7 @@ namespace StockPortalApp
                 "quotation" => PanelQuotation,
                 "add-export" => PanelAddDistribution,
                 "add-vendor" => PanelAddVendor,
+                "category" => PanelCategory,
                 "add-product" => PanelAddProduct,
                 "utility-expenses" => PanelUtilityExpenses,
                 "utility-reminder" => PanelUtilityReminder,
@@ -1841,9 +2962,19 @@ namespace StockPortalApp
 
             PanelTitleText.Text = TitleMap.TryGetValue(key, out var title) ? title : key;
 
+            if (key == "category")
+            {
+                _ = LoadCategoriesAsync();
+            }
+
             if (key == "dashboard")
             {
                 BuildDashboardOverview();
+            }
+
+            if (key == "fixed-assets")
+            {
+                _ = LoadFixedAssetRoomsAsync();
             }
 
             if (key == "stock-report")

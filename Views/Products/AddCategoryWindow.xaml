@@ -1,0 +1,171 @@
+<Window x:Class="StockPortalApp.AddCategoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Add Category"
+        Width="500"
+        SizeToContent="Height"
+        MaxHeight="580"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{StaticResource CreamBrush}"
+        FontFamily="{StaticResource BodyFont}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Accent Thread Line (Tricolor Theme) -->
+        <Grid Grid.Row="0" Height="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Rectangle Grid.Column="0" Fill="#FF9933"/>
+            <Rectangle Grid.Column="1" Fill="White"/>
+            <Rectangle Grid.Column="2" Fill="#138808"/>
+        </Grid>
+
+        <!-- Modern Header -->
+        <Border Grid.Row="1"
+                Background="White"
+                BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="24,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <!-- Category Icon Badge -->
+                    <Border Width="36"
+                            Height="36"
+                            CornerRadius="8"
+                            Background="#FFF5EC"
+                            Margin="0,0,12,0"
+                            VerticalAlignment="Center">
+                        <Viewbox Width="17" Height="17">
+                            <Canvas Width="24" Height="24">
+                                <Rectangle Canvas.Left="3" Canvas.Top="3" Width="7" Height="7" RadiusX="1.2" RadiusY="1.2"
+                                           Stroke="{StaticResource SaffronDeepBrush}" StrokeThickness="1.8"/>
+                                <Rectangle Canvas.Left="14" Canvas.Top="3" Width="7" Height="7" RadiusX="1.2" RadiusY="1.2"
+                                           Stroke="{StaticResource SaffronDeepBrush}" StrokeThickness="1.8"/>
+                                <Rectangle Canvas.Left="3" Canvas.Top="14" Width="7" Height="7" RadiusX="1.2" RadiusY="1.2"
+                                           Stroke="{StaticResource SaffronDeepBrush}" StrokeThickness="1.8"/>
+                                <Rectangle Canvas.Left="14" Canvas.Top="14" Width="7" Height="7" RadiusX="1.2" RadiusY="1.2"
+                                           Stroke="{StaticResource SaffronDeepBrush}" StrokeThickness="1.8"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="HeaderTitle"
+                                   Text="Add Category"
+                                   FontFamily="{StaticResource HeadingFont}"
+                                   FontWeight="Bold"
+                                   FontSize="18"
+                                   Foreground="{StaticResource InkBrush}"/>
+                        <TextBlock Text="New categories are active straight away."
+                                   FontSize="12"
+                                   Foreground="{StaticResource InkSoftBrush}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Tag Badge -->
+                <Border Grid.Column="1"
+                        Background="#FFF5EC"
+                        BorderBrush="#F0D5C0"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10,5"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="Category"
+                               FontSize="11"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource SaffronDeepBrush}"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Form Card Body -->
+        <Border Grid.Row="2"
+                Background="White"
+                BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Margin="22,16"
+                Padding="22,18">
+            <StackPanel>
+                <TextBlock Text="CATEGORY CLASSIFICATION"
+                           FontSize="11.5"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource InkSoftBrush}"
+                           Margin="0,0,0,14"/>
+
+                <!-- Category Name -->
+                <StackPanel Margin="0,0,0,16">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="Category Name" Style="{StaticResource FieldLabel}" Margin="0"/>
+                        <TextBlock Text=" *" Foreground="{StaticResource SaffronDeepBrush}" FontWeight="Bold"/>
+                    </StackPanel>
+                    <TextBox x:Name="CategoryNameBox"
+                             Style="{StaticResource RoundedTextBox}"
+                             Tag="e.g. Sanitation"
+                             Height="40"
+                             Padding="12,0"
+                             FontSize="13"
+                             TextChanged="CategoryNameBox_TextChanged"/>
+                </StackPanel>
+
+                <!-- Code Prefix -->
+                <StackPanel Margin="0,0,0,8">
+                    <TextBlock Text="Code Prefix" Style="{StaticResource FieldLabel}" Margin="0,0,0,6"/>
+                    <TextBox x:Name="CodePrefixBox"
+                             Style="{StaticResource RoundedTextBox}"
+                             Tag="Generated from the name"
+                             Height="40"
+                             Padding="12,0"
+                             FontSize="13"
+                             FontWeight="SemiBold"
+                             Background="#FFFDF9"/>
+                    <TextBlock Text="Used for Product Codes in this category, e.g. SAN-001."
+                               FontSize="11.5"
+                               Foreground="{StaticResource InkSoftBrush}"
+                               Margin="2,6,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Bottom Action Bar -->
+        <Border Grid.Row="3"
+                Background="White"
+                BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="22,14">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button Content="Cancel"
+                        Style="{StaticResource OutlineButton}"
+                        Padding="16,6"
+                        Height="36"
+                        Margin="0,0,10,0"
+                        Click="CancelButton_Click"/>
+                <Button x:Name="AddCategorySubmitButton"
+                        Content="Add Category"
+                        Style="{StaticResource MiniButton}"
+                        Padding="20,6"
+                        Height="36"
+                        Click="AddCategorySubmitButton_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

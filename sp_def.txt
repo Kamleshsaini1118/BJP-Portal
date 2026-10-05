@@ -67,3 +67,60 @@ BEGIN
     ORDER BY b.Id DESC;
 END
 
+-- ======================================================
+-- UTILITY EXPENSES TABLE & PROCEDURES
+-- ======================================================
+
+-- Create UtilityExpenses Table
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[UtilityExpenses]') AND type in (N'U'))
+BEGIN
+    CREATE TABLE [dbo].[UtilityExpenses] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Category] NVARCHAR(100) NOT NULL,
+        [Location] NVARCHAR(200) NOT NULL,
+        [Amount] DECIMAL(18,2) NOT NULL DEFAULT 0,
+        [ExpenseDate] DATE NOT NULL,
+        [Description] NVARCHAR(1000) NULL,
+        [BillNo] NVARCHAR(100) NULL,
+        [BillImagePath] NVARCHAR(500) NULL,
+        [CreatedAt] DATETIME NOT NULL DEFAULT GETDATE()
+    );
+END
+
+-- Add Utility Expense Procedure
+CREATE OR ALTER PROCEDURE [dbo].[sp_AddUtilityExpense]
+    @Category      NVARCHAR(100),
+    @Location      NVARCHAR(200),
+    @Amount        DECIMAL(18,2) = 0,
+    @ExpenseDate   DATE,
+    @Description   NVARCHAR(1000) = NULL,
+    @BillNo        NVARCHAR(100) = NULL,
+    @BillImagePath NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO [dbo].[UtilityExpenses] (Category, Location, Amount, ExpenseDate, Description, BillNo, BillImagePath, CreatedAt)
+    VALUES (@Category, @Location, @Amount, @ExpenseDate, @Description, @BillNo, @BillImagePath, GETDATE());
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id;
+END
+
+-- Get Utility Expenses Procedure
+CREATE OR ALTER PROCEDURE [dbo].[sp_GetUtilityExpenses]
+    @SearchQuery NVARCHAR(200) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT [Id], [Category], [Location], [Amount], [ExpenseDate], [Description], [BillNo], [BillImagePath], [CreatedAt]
+    FROM [dbo].[UtilityExpenses]
+    WHERE (@SearchQuery IS NULL OR @SearchQuery = '' 
+           OR Category LIKE '%' + @SearchQuery + '%' 
+           OR Location LIKE '%' + @SearchQuery + '%'
+           OR Description LIKE '%' + @SearchQuery + '%'
+           OR BillNo LIKE '%' + @SearchQuery + '%')
+    ORDER BY ExpenseDate DESC, Id DESC;
+END
+
+

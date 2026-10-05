@@ -81,7 +81,8 @@ namespace StockPortalApp.Data
                         BankAccount = reader.IsDBNull(reader.GetOrdinal("BankAccount")) ? null : reader.GetString(reader.GetOrdinal("BankAccount")),
                         BankIfsc = reader.IsDBNull(reader.GetOrdinal("BankIfsc")) ? null : reader.GetString(reader.GetOrdinal("BankIfsc")),
                         BankBranch = reader.IsDBNull(reader.GetOrdinal("BankBranch")) ? null : reader.GetString(reader.GetOrdinal("BankBranch")),
-                        CreatedAt = createdAtStr
+                        CreatedAt = createdAtStr,
+                        IsActive = !reader.IsDBNull(reader.GetOrdinal("IsActive")) && reader.GetBoolean(reader.GetOrdinal("IsActive")),
                     });
                 }
             }
@@ -143,9 +144,26 @@ namespace StockPortalApp.Data
             cmd.Parameters.AddWithValue("@BankAccount", (object?)vendor.BankAccount ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@BankIfsc", (object?)vendor.BankIfsc ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@BankBranch", (object?)vendor.BankBranch ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@IsActive", vendor.IsActive);
 
             var result = await cmd.ExecuteScalarAsync();
             return Convert.ToInt32(result);
+        }
+
+
+        public static async Task ToggleVendorStatusAsync(int id, bool isActive)
+        {
+            using var conn = new SqlConnection(ConnectionString);
+            await conn.OpenAsync();
+
+            using var cmd = new SqlCommand("dbo.sp_ToggleVendorStatus", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@IsActive", isActive);
+
+            await cmd.ExecuteNonQueryAsync();
         }
     }
 }
