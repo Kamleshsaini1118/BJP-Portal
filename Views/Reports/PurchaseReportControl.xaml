@@ -6,14 +6,21 @@
              mc:Ignorable="d"
              d:DesignHeight="600"
         d:DesignWidth="1100">
-    <StackPanel>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
         <!-- FILTER CARD -->
-        <Border Background="White"
+        <Border Grid.Row="0"
+                Background="White"
                 BorderBrush="{StaticResource LineBrush}"
                 BorderThickness="1"
                 CornerRadius="14"
                 Padding="20,16"
-                Margin="0,0,0,20">
+                Margin="0,0,0,16">
             <WrapPanel Orientation="Horizontal"
                     VerticalAlignment="Center">
                 <!-- VENDOR -->
@@ -140,20 +147,64 @@
         </Border>
 
         <!-- REPORT HEADER & SUMMARY BAR -->
-        <Grid Margin="0,0,0,14">
+        <Grid Grid.Row="1" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0"
-                       Text="Purchase Report"
-                       FontFamily="{StaticResource HeadingFont}"
-                       FontWeight="Bold"
-                       FontSize="18"
-                       Foreground="{StaticResource InkBrush}"
-                       VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Purchase Report"
+                           FontFamily="{StaticResource HeadingFont}"
+                           FontWeight="Bold"
+                           FontSize="18"
+                           Foreground="{StaticResource InkBrush}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,16,0"/>
+
+                <!-- Toggle: Purchase Wise vs Item Wise -->
+                <Border Background="#F1F5F9" CornerRadius="18" Padding="3" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="BtnPurchaseWise"
+                                Content="Purchase Wise"
+                                Click="BtnPurchaseWise_Click"
+                                Cursor="Hand"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Background="{StaticResource SaffronDeepBrush}"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Padding="12,5">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="15" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <Button x:Name="BtnItemWise"
+                                Content="Item Wise"
+                                Click="BtnItemWise_Click"
+                                Cursor="Hand"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Background="Transparent"
+                                Foreground="{StaticResource InkSoftBrush}"
+                                BorderThickness="0"
+                                Padding="12,5">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="15" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
 
             <StackPanel Grid.Column="2"
                     Orientation="Horizontal"
@@ -183,7 +234,8 @@
         </Grid>
 
         <!-- DATAGRID -->
-        <Border Background="White"
+        <Border Grid.Row="2"
+                Background="White"
                 BorderBrush="{StaticResource LineBrush}"
                 BorderThickness="1"
                 CornerRadius="12"
@@ -199,7 +251,10 @@
                           RowHeight="42"
                           ColumnHeaderHeight="40"
                           CanUserReorderColumns="False"
-                          CanUserResizeRows="False">
+                          CanUserResizeRows="False"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.CanContentScroll="True">
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background"
@@ -268,7 +323,7 @@
                         </Style>
                     </DataGrid.CellStyle>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="DATE"
+                        <DataGridTextColumn Header="PURCHASE DATE"
                                 Binding="{Binding PurchaseDate, StringFormat='dd MMM yyyy'}"
                                 Width="120"/>
                         <DataGridTextColumn Header="PO REFERENCE"
@@ -280,6 +335,9 @@
                         <DataGridTextColumn Header="VENDOR"
                                 Binding="{Binding VendorName}"
                                 Width="*"/>
+                        <DataGridTextColumn Header="SERIAL NO"
+                                Binding="{Binding SerialNumbersDisplay}"
+                                Width="140"/>
                         <DataGridTextColumn Header="TYPE"
                                 Binding="{Binding PurchaseType}"
                                 Width="110"/>
@@ -293,6 +351,136 @@
                     </DataGrid.Columns>
                 </DataGrid>
 
+                <!-- 2. ITEM WISE DATAGRID -->
+                <DataGrid x:Name="ItemPurchaseGrid"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="{StaticResource LineBrush}"
+                          BorderThickness="0"
+                          Background="Transparent"
+                          RowHeight="42"
+                          ColumnHeaderHeight="40"
+                          CanUserReorderColumns="False"
+                          CanUserResizeRows="False"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.CanContentScroll="True"
+                          Visibility="Collapsed">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background" Value="#FAFAF8"/>
+                            <Setter Property="Foreground" Value="{StaticResource InkSoftBrush}"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="FontSize" Value="11"/>
+                            <Setter Property="Padding" Value="14,0"/>
+                            <Setter Property="BorderBrush" Value="{StaticResource SaffronDeepBrush}"/>
+                            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="White"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#FFFBF7"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#FFFBF7"/>
+                                    <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="Padding" Value="14,0"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="DataGridCell">
+                                        <Border Padding="{TemplateBinding Padding}" Background="Transparent">
+                                            <ContentPresenter VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="DATE"
+                                Binding="{Binding PurchaseDate, StringFormat='dd MMM yyyy'}"
+                                Width="120"/>
+                        <DataGridTextColumn Header="CATEGORY"
+                                Binding="{Binding CategoryDisplay}"
+                                Width="140"/>
+                        <DataGridTextColumn Header="PRODUCT / ITEM"
+                                Binding="{Binding ProductName}"
+                                Width="*"/>
+                        <DataGridTextColumn Header="SERIAL NO"
+                                Binding="{Binding SerialNumberDisplay}"
+                                Width="140"/>
+                        <DataGridTextColumn Header="QTY"
+                                Binding="{Binding QtyDisplay}"
+                                Width="90">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextAlignment" Value="Right"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="UNIT PRICE"
+                                Binding="{Binding PriceDisplay}"
+                                Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextAlignment" Value="Right"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="GST %"
+                                Binding="{Binding GstPercentDisplay}"
+                                Width="85">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextAlignment" Value="Right"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="TAX AMT"
+                                Binding="{Binding GstAmountDisplay}"
+                                Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextAlignment" Value="Right"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="TOTAL"
+                                Binding="{Binding TotalAmountDisplay}"
+                                Width="120">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="TextAlignment" Value="Right"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
                 <TextBlock x:Name="EmptyGridText"
                            Text="No purchase records found matching filters."
                            Foreground="{StaticResource InkSoftBrush}"
@@ -303,5 +491,5 @@
                            Visibility="Collapsed"/>
             </Grid>
         </Border>
-    </StackPanel>
+    </Grid>
 </UserControl>

@@ -5,14 +5,21 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="1100">
-    <StackPanel>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
         <!-- FILTER CARD -->
-        <Border Background="White"
+        <Border Grid.Row="0"
+                Background="White"
                 BorderBrush="{StaticResource LineBrush}"
                 BorderThickness="1"
                 CornerRadius="14"
                 Padding="20,16"
-                Margin="0,0,0,20">
+                Margin="0,0,0,16">
             <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- CATEGORY -->
                 <StackPanel Margin="0,0,14,10">
@@ -56,7 +63,7 @@
         </Border>
 
         <!-- REPORT HEADER & SUMMARY BAR -->
-        <Grid Margin="0,0,0,14">
+        <Grid Grid.Row="1" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -97,7 +104,8 @@
         </Grid>
 
         <!-- DATAGRID -->
-        <Border Background="White"
+        <Border Grid.Row="2"
+                Background="White"
                 BorderBrush="{StaticResource LineBrush}"
                 BorderThickness="1"
                 CornerRadius="12"
@@ -113,7 +121,10 @@
                           RowHeight="42"
                           ColumnHeaderHeight="40"
                           CanUserReorderColumns="False"
-                          CanUserResizeRows="False">
+                          CanUserResizeRows="False"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.CanContentScroll="True">
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="#FAFAF8"/>
@@ -182,5 +193,5 @@
                            Visibility="Collapsed"/>
             </Grid>
         </Border>
-    </StackPanel>
+    </Grid>
 </UserControl>

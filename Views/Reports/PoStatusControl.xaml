@@ -5,14 +5,21 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="1100">
-    <StackPanel>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
         <!-- FILTER CARD -->
-        <Border Background="White"
+        <Border Grid.Row="0"
+                Background="White"
                 BorderBrush="{StaticResource LineBrush}"
                 BorderThickness="1"
                 CornerRadius="14"
                 Padding="20,16"
-                Margin="0,0,0,20">
+                Margin="0,0,0,16">
             <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- VENDOR -->
                 <StackPanel Margin="0,0,14,10">
@@ -69,55 +76,57 @@
             </WrapPanel>
         </Border>
 
-        <!-- REPORT HEADER & SUMMARY BAR -->
-        <Grid Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- REPORT HEADER & SUMMARY BAR & NOTE -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0"
-                       Text="PO Status Report"
-                       FontFamily="{StaticResource HeadingFont}"
-                       FontWeight="Bold"
-                       FontSize="18"
-                       Foreground="{StaticResource InkBrush}"
-                       VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="0"
+                           Text="PO Status Report"
+                           FontFamily="{StaticResource HeadingFont}"
+                           FontWeight="Bold"
+                           FontSize="18"
+                           Foreground="{StaticResource InkBrush}"
+                           VerticalAlignment="Center"/>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                <!-- Summary Pill Badge -->
-                <Border Background="#FFF5EC"
-                        BorderBrush="#FCE4D6"
-                        BorderThickness="1"
-                        CornerRadius="20"
-                        Padding="14,6"
-                        Margin="0,0,12,0"
-                        VerticalAlignment="Center">
-                    <TextBlock x:Name="SummaryBadgeText"
-                               Text="0 POs · Total Value: ₹0"
-                               FontWeight="Bold"
-                               FontSize="12.5"
-                               Foreground="{StaticResource SaffronDeepBrush}"/>
-                </Border>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Summary Pill Badge -->
+                    <Border Background="#FFF5EC"
+                            BorderBrush="#FCE4D6"
+                            BorderThickness="1"
+                            CornerRadius="20"
+                            Padding="14,6"
+                            Margin="0,0,12,0"
+                            VerticalAlignment="Center">
+                        <TextBlock x:Name="SummaryBadgeText"
+                                   Text="0 POs · Total Value: ₹0"
+                                   FontWeight="Bold"
+                                   FontSize="12.5"
+                                   Foreground="{StaticResource SaffronDeepBrush}"/>
+                    </Border>
 
-                <!-- Export to Excel Button -->
-                <Button Content="Export to Excel"
-                        Style="{StaticResource OutlineButton}"
-                        Height="36"
-                        Padding="14,0"
-                        Click="ExportExcelButton_Click"/>
-            </StackPanel>
-        </Grid>
+                    <!-- Export to Excel Button -->
+                    <Button Content="Export to Excel"
+                            Style="{StaticResource OutlineButton}"
+                            Height="36"
+                            Padding="14,0"
+                            Click="ExportExcelButton_Click"/>
+                </StackPanel>
+            </Grid>
 
-        <!-- EXPLANATORY NOTE -->
-        <TextBlock Text="&quot;Converted to Purchase&quot; checks whether this PO Reference has been used on an Add Purchase entry."
-                   FontSize="11.5"
-                   Foreground="{StaticResource InkSoftBrush}"
-                   Margin="0,0,0,12"/>
+            <!-- EXPLANATORY NOTE -->
+            <TextBlock Text="&quot;Converted to Purchase&quot; checks whether this PO Reference has been used on an Add Purchase entry."
+                       FontSize="11.5"
+                       Foreground="{StaticResource InkSoftBrush}"/>
+        </StackPanel>
 
         <!-- DATAGRID -->
-        <Border Background="White"
+        <Border Grid.Row="2"
+                Background="White"
                 BorderBrush="{StaticResource LineBrush}"
                 BorderThickness="1"
                 CornerRadius="12"
@@ -133,7 +142,10 @@
                           RowHeight="42"
                           ColumnHeaderHeight="40"
                           CanUserReorderColumns="False"
-                          CanUserResizeRows="False">
+                          CanUserResizeRows="False"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.CanContentScroll="True">
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="#FAFAF8"/>
@@ -237,5 +249,5 @@
                            Visibility="Collapsed"/>
             </Grid>
         </Border>
-    </StackPanel>
+    </Grid>
 </UserControl>

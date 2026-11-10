@@ -105,6 +105,7 @@ namespace StockPortalApp
                 {
                     var row = new PurchaseOrderItemRow(_products) { Category = item.Category };
                     row.ProductName = item.ProductName;
+                    row.SerialNumber = item.SerialNumber;
                     row.Qty = item.Qty;
                     row.Price = item.Price;
                     row.GstPercent = item.GstPercent;
@@ -349,6 +350,25 @@ namespace StockPortalApp
                 return;
             }
 
+            var enteredSerials = purchaseRows
+                .Where(r => !string.IsNullOrWhiteSpace(r.SerialNumber))
+                .Select(r => r.SerialNumber!.Trim())
+                .ToList();
+            if (enteredSerials.Count != enteredSerials.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+            {
+                MessageBox.Show("Duplicate serial numbers detected in the items table. Each serial number must be unique.",
+                    "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var duplicateInDb = await PurchaseRepository.CheckExistingSerialNumberAsync(enteredSerials, _editingPurchase?.Id);
+            if (duplicateInDb != null)
+            {
+                MessageBox.Show($"The serial number '{duplicateInDb}' is already registered in an existing purchase.\n\nPlease enter a unique serial number.",
+                    "Duplicate Serial Number", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             string? destination = null;
             List<DistributionItemRow> distRows = new();
             if (type == "Direct")
@@ -373,10 +393,13 @@ namespace StockPortalApp
             }
 
             SubmitButton.IsEnabled = false;
+            bool isNewPurchase = _editingPurchase == null;
+            int? createdPurchaseId = null;
+            bool isNewDistribution = false;
+            int? distributionId = _editingDistributionId;
+
             try
             {
-                int? distributionId = _editingDistributionId;
-
                 if (type == "Direct")
                 {
                     var dispatchDate = DispatchDatePicker.SelectedDate ?? IndiaTime.Today;
@@ -396,6 +419,7 @@ namespace StockPortalApp
                         var (newDistId, _) = await PurchaseRepository.AddDistributionAsync(
                             destination!, dispatchDate, distReceiverName, distReceiverNumber, distPosition, distRemark);
                         distributionId = newDistId;
+                        isNewDistribution = true;
                     }
 
                     foreach (var row in distRows)
@@ -467,12 +491,18 @@ namespace StockPortalApp
                     purchaseDate, receiverName, receiverNumber, remarks, distributionId,
                     receiptBasis, challanNumber, challanDate, invoiceDate, invoiceStatus, invoiceGroupId);
 
+                if (isNewPurchase)
+                {
+                    createdPurchaseId = purchaseId;
+                }
+
                 await PurchaseRepository.ClearItemsAsync(purchaseId);
                 foreach (var row in purchaseRows)
                 {
                     var qty = decimal.Parse(row.Qty);
                     var price = decimal.TryParse(row.Price, out var p) ? p : 0;
-                    await PurchaseRepository.AddItemAsync(purchaseId, row.Category, row.ProductName, qty, price, row.GstPercent);
+                    var serial = string.IsNullOrWhiteSpace(row.SerialNumber) ? null : row.SerialNumber.Trim();
+                    await PurchaseRepository.AddItemAsync(purchaseId, row.Category, row.ProductName, qty, price, row.GstPercent, serial);
                 }
 
                 foreach (var deletedId in _deletedInvoiceFileIds)
@@ -490,6 +520,13 @@ namespace StockPortalApp
             }
             catch (Exception ex)
             {
+                if (isNewPurchase && createdPurchaseId.HasValue && createdPurchaseId.Value > 0)
+                {
+                    await PurchaseRepository.DeleteIncompletePurchaseAsync(
+                        createdPurchaseId.Value, 
+                        isNewDistribution ? distributionId : null);
+                }
+
                 MessageBox.Show($"Could not save the purchase.\n\n{ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 SubmitButton.IsEnabled = true;

@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Add Purchase"
-        Width="920"
+        Width="980"
         SizeToContent="Height"
         MaxHeight="780"
         WindowStartupLocation="CenterOwner"
@@ -291,13 +291,15 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="1.1*"/>
                                 <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="1.4*"/>
+                                <ColumnDefinition Width="1.3*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="1.0*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="0.7*"/>
                                 <ColumnDefinition Width="8"/>
                                 <ColumnDefinition Width="0.8*"/>
                                 <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="0.8*"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="0.8*"/>
+                                <ColumnDefinition Width="0.75*"/>
                                 <ColumnDefinition Width="8"/>
                                 <ColumnDefinition Width="0.9*"/>
                                 <ColumnDefinition Width="8"/>
@@ -305,10 +307,11 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="CATEGORY" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Cursor="Hand"/>
                             <TextBlock Grid.Column="2" Text="PRODUCT" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Cursor="Hand"/>
-                            <TextBlock Grid.Column="4" Text="QTY" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
-                            <TextBlock Grid.Column="6" Text="PRICE" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
-                            <TextBlock Grid.Column="8" Text="GST %" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Cursor="Hand"/>
-                            <TextBlock Grid.Column="10" Text="TOTAL" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
+                            <TextBlock Grid.Column="4" Text="SERIAL NO (OPT)" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
+                            <TextBlock Grid.Column="6" Text="QTY" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
+                            <TextBlock Grid.Column="8" Text="PRICE" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
+                            <TextBlock Grid.Column="10" Text="GST %" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}" Cursor="Hand"/>
+                            <TextBlock Grid.Column="12" Text="TOTAL" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource InkSoftBrush}"/>
                         </Grid>
 
                         <!-- Items Table Rows -->
@@ -319,13 +322,15 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="1.1*"/>
                                             <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="1.4*"/>
+                                            <ColumnDefinition Width="1.3*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="1.0*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="0.7*"/>
                                             <ColumnDefinition Width="8"/>
                                             <ColumnDefinition Width="0.8*"/>
                                             <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="0.8*"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="0.8*"/>
+                                            <ColumnDefinition Width="0.75*"/>
                                             <ColumnDefinition Width="8"/>
                                             <ColumnDefinition Width="0.9*"/>
                                             <ColumnDefinition Width="8"/>
@@ -356,7 +361,8 @@
                                                  FontSize="13"
                                                  VerticalContentAlignment="Center"
                                                  Style="{StaticResource RoundedTextBox}"
-                                                 Text="{Binding Qty, UpdateSourceTrigger=PropertyChanged}"/>
+                                                 Tag="e.g. SN-001"
+                                                 Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"/>
 
                                         <TextBox Grid.Column="6"
                                                  MinHeight="36"
@@ -364,9 +370,17 @@
                                                  FontSize="13"
                                                  VerticalContentAlignment="Center"
                                                  Style="{StaticResource RoundedTextBox}"
+                                                 Text="{Binding Qty, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                        <TextBox Grid.Column="8"
+                                                 MinHeight="36"
+                                                 Padding="10,0"
+                                                 FontSize="13"
+                                                 VerticalContentAlignment="Center"
+                                                 Style="{StaticResource RoundedTextBox}"
                                                  Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                        <ComboBox Grid.Column="8"
+                                        <ComboBox Grid.Column="10"
                                                   MinHeight="36"
                                                   Padding="10,0"
                                                   FontSize="13"
@@ -375,7 +389,7 @@
                                                   ItemsSource="{Binding GstOptions, RelativeSource={RelativeSource AncestorType=Window}}"
                                                   SelectedItem="{Binding GstPercent, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                        <TextBox Grid.Column="10"
+                                        <TextBox Grid.Column="12"
                                                  MinHeight="36"
                                                  Padding="10,0"
                                                  FontSize="13"
@@ -386,7 +400,7 @@
                                                  Foreground="{StaticResource InkSoftBrush}"
                                                  Text="{Binding TotalDisplay, Mode=OneWay}"/>
 
-                                        <Button Grid.Column="12"
+                                        <Button Grid.Column="14"
                                                 Content="✕"
                                                 Width="26"
                                                 Height="26"

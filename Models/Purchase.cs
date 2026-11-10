@@ -1,4 +1,4 @@
-﻿using System.Windows.Media;
+using System.Windows.Media;
 
 namespace StockPortalApp.Models
 {
@@ -25,6 +25,8 @@ namespace StockPortalApp.Models
         public string InvoiceStatus { get; set; } = "Invoiced"; // "Invoiced" or "Pending"
         public int? InvoiceGroupId { get; set; }
 
+        public string? SerialNumbers { get; set; }
+
         /// <summary>Set by the caller after loading the list, since it depends on sibling rows sharing the same InvoiceGroupId.</summary>
         public string LinkedChallansDisplay { get; set; } = "";
 
@@ -32,6 +34,7 @@ namespace StockPortalApp.Models
         public bool IsPendingInvoice => InvoiceStatus == "Pending";
         public bool HasLinkedChallans => !string.IsNullOrWhiteSpace(LinkedChallansDisplay);
 
+        public string SerialNumbersDisplay => string.IsNullOrWhiteSpace(SerialNumbers) ? "—" : SerialNumbers;
         public string PoReferenceDisplay => string.IsNullOrWhiteSpace(PoReference) ? "—" : PoReference;
         public string InvoiceNumberDisplay => string.IsNullOrWhiteSpace(InvoiceNumber) ? "—" : InvoiceNumber;
         public string PaymentModeDisplay => string.IsNullOrWhiteSpace(PaymentMode) ? "—" : PaymentMode;

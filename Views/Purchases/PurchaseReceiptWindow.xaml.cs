@@ -179,21 +179,23 @@ namespace StockPortalApp
                 Margin = new Thickness(0, 0, 0, 0)
             };
             var itemsHeader = new Grid();
-            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.4, GridUnitType.Star) });
-            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2.3, GridUnitType.Star) });
-            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.7, GridUnitType.Star) });
-            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) });
-            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.7, GridUnitType.Star) });
-            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.0, GridUnitType.Star) });
+            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.35, GridUnitType.Star) });
+            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2.0, GridUnitType.Star) });
             itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.2, GridUnitType.Star) });
+            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.6, GridUnitType.Star) });
+            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.0, GridUnitType.Star) });
+            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.65, GridUnitType.Star) });
+            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.9, GridUnitType.Star) });
+            itemsHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) });
 
             AddWhiteHeaderCell(itemsHeader, "#", 0, TextAlignment.Center);
             AddWhiteHeaderCell(itemsHeader, "DESCRIPTION & CATEGORY", 1, TextAlignment.Left);
-            AddWhiteHeaderCell(itemsHeader, "QTY", 2, TextAlignment.Right);
-            AddWhiteHeaderCell(itemsHeader, "PRICE (₹)", 3, TextAlignment.Right);
-            AddWhiteHeaderCell(itemsHeader, "GST %", 4, TextAlignment.Right);
-            AddWhiteHeaderCell(itemsHeader, "TAX (₹)", 5, TextAlignment.Right);
-            AddWhiteHeaderCell(itemsHeader, "TOTAL (₹)", 6, TextAlignment.Right);
+            AddWhiteHeaderCell(itemsHeader, "SERIAL NO", 2, TextAlignment.Left);
+            AddWhiteHeaderCell(itemsHeader, "QTY", 3, TextAlignment.Right);
+            AddWhiteHeaderCell(itemsHeader, "PRICE (₹)", 4, TextAlignment.Right);
+            AddWhiteHeaderCell(itemsHeader, "GST %", 5, TextAlignment.Right);
+            AddWhiteHeaderCell(itemsHeader, "TAX (₹)", 6, TextAlignment.Right);
+            AddWhiteHeaderCell(itemsHeader, "TOTAL (₹)", 7, TextAlignment.Right);
 
             tableHeaderBar.Child = itemsHeader;
             ContentStack.Children.Add(tableHeaderBar);
@@ -225,19 +227,21 @@ namespace StockPortalApp
                 };
 
                 var row = new Grid();
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.4, GridUnitType.Star) });
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2.3, GridUnitType.Star) });
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.7, GridUnitType.Star) });
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) });
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.7, GridUnitType.Star) });
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.0, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.35, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2.0, GridUnitType.Star) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.2, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.6, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.0, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.65, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.9, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) });
 
                 AddBodyCell(row, rowIdx.ToString(), 0, TextAlignment.Center);
 
+                var itemDesc = string.IsNullOrEmpty(item.Category) ? item.ProductName : $"{item.ProductName}\n[{item.Category}]";
                 var nameText = new TextBlock
                 {
-                    Text = string.IsNullOrEmpty(item.Category) ? item.ProductName : $"{item.ProductName}\n[{item.Category}]",
+                    Text = itemDesc,
                     FontSize = 12,
                     Foreground = (Brush)FindResource("InkBrush"),
                     TextWrapping = TextWrapping.Wrap
@@ -245,11 +249,23 @@ namespace StockPortalApp
                 Grid.SetColumn(nameText, 1);
                 row.Children.Add(nameText);
 
-                AddBodyCell(row, qty.ToString("N0"), 2, TextAlignment.Right);
-                AddBodyCell(row, $"₹{price:N2}", 3, TextAlignment.Right);
-                AddBodyCell(row, $"{gst:G29}%", 4, TextAlignment.Right);
-                AddBodyCell(row, $"₹{gstAmt:N2}", 5, TextAlignment.Right);
-                AddBodyCell(row, $"₹{totalVal:N2}", 6, TextAlignment.Right, isBold: true);
+                var serialText = new TextBlock
+                {
+                    Text = string.IsNullOrWhiteSpace(item.SerialNumber) ? "—" : item.SerialNumber.Trim(),
+                    FontSize = 11,
+                    Foreground = string.IsNullOrWhiteSpace(item.SerialNumber) ? (Brush)FindResource("InkSoftBrush") : (Brush)FindResource("InkBrush"),
+                    FontWeight = string.IsNullOrWhiteSpace(item.SerialNumber) ? FontWeights.Normal : FontWeights.SemiBold,
+                    TextWrapping = TextWrapping.Wrap,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(serialText, 2);
+                row.Children.Add(serialText);
+
+                AddBodyCell(row, qty.ToString("N0"), 3, TextAlignment.Right);
+                AddBodyCell(row, $"₹{price:N2}", 4, TextAlignment.Right);
+                AddBodyCell(row, $"{gst:G29}%", 5, TextAlignment.Right);
+                AddBodyCell(row, $"₹{gstAmt:N2}", 6, TextAlignment.Right);
+                AddBodyCell(row, $"₹{totalVal:N2}", 7, TextAlignment.Right, isBold: true);
 
                 rowBorder.Child = row;
                 ContentStack.Children.Add(rowBorder);
@@ -457,7 +473,7 @@ namespace StockPortalApp
                 {
                     // 4. Restore PrintContentPanel back to Window preview
                     printWrapper.Child = null;
-                    PrintContentPanel.Width = 620;
+                    PrintContentPanel.Width = 700;
                     PrintContentPanel.BorderThickness = new Thickness(1);
                     PrintContentPanel.HorizontalAlignment = HorizontalAlignment.Center;
                     ReceiptScrollViewer.Content = PrintContentPanel;

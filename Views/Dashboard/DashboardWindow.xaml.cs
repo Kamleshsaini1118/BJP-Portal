@@ -31,6 +31,7 @@ namespace StockPortalApp
             ["issue-borrow"] = "Issue / Borrow",
             ["raise-po"] = "Raise PO",
             ["add-purchase"] = "Add Purchase",
+            ["goods-return"] = "Goods Return",
             ["add-export"] = "Add Distribution",
             ["add-vendor"] = "Add Vendor",
             ["category"] = "Category",
@@ -51,6 +52,11 @@ namespace StockPortalApp
             _loginWindow = loginWindow;
             SetUser(displayName);
             Loaded += DashboardWindow_Loaded;
+            GoodsReturnView.ReturnSaved += async () =>
+            {
+                await LoadStockReportAsync();
+                BuildDashboardOverview();
+            };
 
             _fixedAssetsPopupTimer.Tick += (s, e) =>
             {
@@ -82,6 +88,7 @@ namespace StockPortalApp
                 await LoadIssueRecordsAsync();
                 await LoadPurchaseOrdersAsync();
                 await LoadPurchasesAsync();
+                await GoodsReturnView.LoadDataAsync(_allVendors, _categories, _allProducts);
                 await LoadDistributionsAsync();
                 await LoadProjectsAsync();
                 await LoadUtilityExpensesAsync();
@@ -739,7 +746,8 @@ namespace StockPortalApp
                 : _allPurchases.Where(p =>
                     p.VendorName.ToLowerInvariant().Contains(query) ||
                     (p.PoReference?.ToLowerInvariant().Contains(query) ?? false) ||
-                    (p.InvoiceNumber?.ToLowerInvariant().Contains(query) ?? false)
+                    (p.InvoiceNumber?.ToLowerInvariant().Contains(query) ?? false) ||
+                    (p.SerialNumbers?.ToLowerInvariant().Contains(query) ?? false)
                   ).ToList();
         }
 
@@ -902,6 +910,7 @@ namespace StockPortalApp
                                 p.VendorName,
                                 string.IsNullOrWhiteSpace(item.Category) ? "—" : item.Category,
                                 item.ProductName,
+                                string.IsNullOrWhiteSpace(item.SerialNumber) ? "—" : item.SerialNumber,
                                 qty.ToString("N0"),
                                 $"₹{price:N2}",
                                 $"{gst:G29}%",
@@ -919,6 +928,7 @@ namespace StockPortalApp
                             p.InvoiceNumberDisplay,
                             p.PurchaseType,
                             p.VendorName,
+                            "—",
                             "—",
                             "—",
                             "—",
@@ -944,6 +954,7 @@ namespace StockPortalApp
                         "Vendor Name",
                         "Category",
                         "Product Name",
+                        "Serial Number",
                         "Qty",
                         "Unit Price",
                         "GST %",
@@ -2919,7 +2930,7 @@ namespace StockPortalApp
             foreach (var other in new[]
                      {
                          NavDashboard, NavFoodPackets, NavFixedAssets, NavStockReport, NavDamage, NavIssueBorrow,
-                         NavRaisePo, NavAddPurchase, NavQuotation, NavAddDistribution, NavAddVendor,
+                         NavRaisePo, NavAddPurchase, NavGoodsReturn, NavQuotation, NavAddDistribution, NavAddVendor,
                          NavCategory,
                          NavAddProduct, NavUtilityExpenses, NavUtilityReminder, NavReports
                      })
@@ -2930,7 +2941,7 @@ namespace StockPortalApp
             foreach (var panel in new[]
                      {
                          PanelDashboard, PanelFoodPackets, PanelFixedAssets, PanelFixedAssetReport, PanelStockReport, PanelDamage, PanelIssueBorrow,
-                         PanelRaisePo, PanelAddPurchase, PanelQuotation, PanelAddDistribution, PanelAddVendor,
+                         PanelRaisePo, PanelAddPurchase, PanelGoodsReturn, PanelQuotation, PanelAddDistribution, PanelAddVendor,
                          PanelCategory,
                          PanelAddProduct, PanelUtilityExpenses, PanelUtilityReminder, PanelReports
                      })
@@ -2948,6 +2959,7 @@ namespace StockPortalApp
                 "issue-borrow" => PanelIssueBorrow,
                 "raise-po" => PanelRaisePo,
                 "add-purchase" => PanelAddPurchase,
+                "goods-return" => PanelGoodsReturn,
                 "quotation" => PanelQuotation,
                 "add-export" => PanelAddDistribution,
                 "add-vendor" => PanelAddVendor,
@@ -3005,6 +3017,11 @@ namespace StockPortalApp
             if (key == "reports")
             {
                 _ = ReportsViewControl.RefreshActiveReportAsync();
+            }
+
+            if (key == "goods-return")
+            {
+                _ = GoodsReturnView.LoadDataAsync(_allVendors, _categories, _allProducts);
             }
         }
 

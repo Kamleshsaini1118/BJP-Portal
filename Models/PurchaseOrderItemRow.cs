@@ -13,6 +13,7 @@ namespace StockPortalApp.Models
         private readonly List<Product> _allProducts;
         private string? _category;
         private string _productName = "";
+        private string? _serialNumber;
         private string _qty = "";
         private string _price = "";
         private decimal _gstPercent = 0;
@@ -75,6 +76,12 @@ namespace StockPortalApp.Models
                     OnAddNewItemRequested?.Invoke(this);
                 }
             }
+        }
+
+        public string? SerialNumber
+        {
+            get => _serialNumber;
+            set { _serialNumber = value; OnChanged(nameof(SerialNumber)); }
         }
 
         public string Qty
