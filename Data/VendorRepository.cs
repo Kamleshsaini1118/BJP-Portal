@@ -1,6 +1,9 @@
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Helpers;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.Products;
+using StockPortal.Core.DTOs.Vendors;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -16,7 +19,62 @@ namespace StockPortalApp.Data
         private static string ConnectionString =>
             ConfigurationManager.ConnectionStrings["StockPortalDb"].ConnectionString;
 
+        private static string FormatCreatedAt(object? val)
+        {
+            if (val == null) return "—";
+            if (val is System.Text.Json.JsonElement je)
+            {
+                if (je.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    var s = je.GetString();
+                    if (DateTime.TryParse(s, out var parsedDate)) return parsedDate.ToString("dd MMM yyyy");
+                    return string.IsNullOrWhiteSpace(s) ? "—" : s;
+                }
+                if (je.TryGetDateTime(out var dtVal))
+                {
+                    return dtVal.ToString("dd MMM yyyy");
+                }
+                return je.ToString();
+            }
+            if (val is DateTime dateVal) return dateVal.ToString("dd MMM yyyy");
+            var str = val.ToString()?.Trim() ?? "";
+            if (DateTime.TryParse(str, out var dtFromStr)) return dtFromStr.ToString("dd MMM yyyy");
+            return string.IsNullOrWhiteSpace(str) ? "—" : str;
+        }
+
         public static async Task<List<Vendor>> GetVendorsAsync()
+        {
+            try
+            {
+                // API Call
+                var response = await ApiClient.GetAsync<List<VendorDto>>("vendors");
+                if (response.Success && response.Data != null && response.Data.Count > 0)
+                {
+                    return response.Data.Select(d => new Vendor
+                    {
+                        Id = d.Id,
+                        Name = d.Name,
+                        Gst = d.Gst,
+                        Address = d.Address,
+                        ContactPerson = d.ContactPerson,
+                        ContactNumber = d.ContactNumber,
+                        Email = d.Email,
+                        BankHolder = d.BankHolder,
+                        BankAccount = d.BankAccount,
+                        BankIfsc = d.BankIfsc,
+                        BankBranch = d.BankBranch,
+                        CreatedAt = FormatCreatedAt(d.CreatedAt),
+                        IsActive = d.IsActive ?? true
+                    }).ToList();
+                }
+            }
+            catch { }
+
+            // Fallback to direct SQL
+            return await GetVendorsDirectSqlAsync();
+        }
+
+        public static async Task<List<Vendor>> GetVendorsDirectSqlAsync()
         {
             var list = new List<Vendor>();
 
@@ -126,8 +184,96 @@ namespace StockPortalApp.Data
             return list;
         }
 
+        public static async Task<Vendor?> GetVendorByIdAsync(int id)
+        {
+            try
+            {
+                // API Call
+                var response = await ApiClient.GetAsync<VendorDto>($"vendors/{id}");
+                if (response.Success && response.Data != null)
+                {
+                    var d = response.Data;
+                    return new Vendor
+                    {
+                        Id = d.Id,
+                        Name = d.Name,
+                        Gst = d.Gst,
+                        Address = d.Address,
+                        ContactPerson = d.ContactPerson,
+                        ContactNumber = d.ContactNumber,
+                        Email = d.Email,
+                        BankHolder = d.BankHolder,
+                        BankAccount = d.BankAccount,
+                        BankIfsc = d.BankIfsc,
+                        BankBranch = d.BankBranch,
+                        CreatedAt = FormatCreatedAt(d.CreatedAt),
+                        IsActive = d.IsActive ?? true
+                    };
+                }
+            }
+            catch { }
+
+            // Direct SQL fallback
+            var all = await GetVendorsDirectSqlAsync();
+            return all.FirstOrDefault(v => v.Id == id);
+        }
+
+        /// <summary>Updates an existing vendor using the PUT /api/v1/vendors/{id} endpoint.</summary>
+        public static async Task<bool> UpdateVendorAsync(int id, Vendor vendor)
+        {
+            vendor.Id = id;
+            var resultId = await SaveVendorAsync(vendor);
+            return resultId > 0;
+        }
+
         /// <summary>Inserts (vendor.Id == null) or updates (vendor.Id has a value). Returns the vendor's Id.</summary>
         public static async Task<int> SaveVendorAsync(Vendor vendor)
+        {
+            // DTO payload
+            var dto = new SaveVendorDto
+            {
+                Id = vendor.Id,
+                Name = vendor.Name,
+                Gst = vendor.Gst,
+                Address = vendor.Address,
+                ContactPerson = vendor.ContactPerson,
+                ContactNumber = vendor.ContactNumber,
+                Email = vendor.Email,
+                BankHolder = vendor.BankHolder,
+                BankAccount = vendor.BankAccount,
+                BankIfsc = vendor.BankIfsc,
+                BankBranch = vendor.BankBranch,
+                IsActive = vendor.IsActive
+            };
+
+            try
+            {
+                // If editing existing vendor, call PUT /api/v1/vendors/{id}
+                if (vendor.Id.HasValue && vendor.Id.Value > 0)
+                {
+                    var editResponse = await ApiClient.PutAsync<int>($"vendors/{vendor.Id.Value}", dto);
+                    if (editResponse.Success)
+                    {
+                        return editResponse.Data > 0 ? editResponse.Data : vendor.Id.Value;
+                    }
+                }
+                else
+                {
+                    // New vendor: call POST /api/v1/vendors
+                    var addResponse = await ApiClient.PostAsync<int>("vendors", dto);
+                    if (addResponse.Success)
+                    {
+                        return addResponse.Data;
+                    }
+                }
+            }
+            catch { }
+
+            // Fallback to direct SQL
+            return await SaveVendorDirectSqlAsync(vendor);
+        }
+
+        public static async Task<int> SaveVendorDirectSqlAsync(Vendor vendor)
         {
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
@@ -150,9 +296,13 @@ namespace StockPortalApp.Data
             return Convert.ToInt32(result);
         }
 
-
         public static async Task ToggleVendorStatusAsync(int id, bool isActive)
         {
+            // API Call
+            await ApiClient.PatchAsync<bool>($"vendors/{id}/status", new ToggleStatusDto { IsActive = isActive });
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -164,6 +314,7 @@ namespace StockPortalApp.Data
             cmd.Parameters.AddWithValue("@IsActive", isActive);
 
             await cmd.ExecuteNonQueryAsync();
+            */
         }
     }
 }

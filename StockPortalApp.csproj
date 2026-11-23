@@ -7,12 +7,16 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>StockPortalApp</RootNamespace>
     <AssemblyName>StockPortalApp</AssemblyName>
-    <DefaultItemExcludes>$(DefaultItemExcludes);StockPortalAppV1\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);StockPortal.Core\**;StockPortal.Infrastructure\**;StockPortal.API\**</DefaultItemExcludes>
     <!-- Note: Win32 ApplicationIcon strictly requires a .ico format file (e.g. Assets\Images\bjp-logo.ico). Do not use .webp or .png here. -->
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="Assets\Images\bjp-logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="StockPortal.Core\StockPortal.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

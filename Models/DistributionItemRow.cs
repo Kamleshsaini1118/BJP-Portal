@@ -16,6 +16,10 @@ namespace StockPortalApp.Models
         private string _productName = "";
         private string _qty = "";
 
+        public DistributionItemRow() : this(new List<Product>())
+        {
+        }
+
         public DistributionItemRow(List<Product> allProducts)
         {
             _allProducts = allProducts;

@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.Utilities;
 
 namespace StockPortalApp.Data
 {
@@ -20,6 +22,16 @@ namespace StockPortalApp.Data
 
         public static async Task<List<UtilityExpense>> GetExpensesAsync(string? searchQuery = null)
         {
+            // API Call
+            var url = "utilities/expenses" + (!string.IsNullOrWhiteSpace(searchQuery) ? $"?searchQuery={Uri.EscapeDataString(searchQuery)}" : "");
+            var response = await ApiClient.GetAsync<List<UtilityExpense>>(url);
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 var list = new List<UtilityExpense>();
@@ -54,33 +66,56 @@ namespace StockPortalApp.Data
             }
             catch
             {
-                // Fallback to in-memory list if SQL procedure fails or table isn't created yet
                 lock (SyncLock)
                 {
                     var query = InMemExpenses.AsEnumerable();
                     if (!string.IsNullOrWhiteSpace(searchQuery))
                     {
-                        string term = searchQuery.Trim().ToLowerInvariant();
-                        query = query.Where(e => e.Category.ToLowerInvariant().Contains(term)
-                                              || e.Location.ToLowerInvariant().Contains(term)
-                                              || (e.Description != null && e.Description.ToLowerInvariant().Contains(term))
-                                              || (e.BillNo != null && e.BillNo.ToLowerInvariant().Contains(term)));
+                        var s = searchQuery.Trim().ToLowerInvariant();
+                        query = query.Where(e => (e.Category?.ToLowerInvariant().Contains(s) ?? false)
+                                              || (e.Location?.ToLowerInvariant().Contains(s) ?? false)
+                                              || (e.Description?.ToLowerInvariant().Contains(s) ?? false)
+                                              || (e.BillNo?.ToLowerInvariant().Contains(s) ?? false));
                     }
                     return query.OrderByDescending(e => e.ExpenseDate).ToList();
                 }
             }
+            */
+            return new List<UtilityExpense>();
         }
 
-        public static async Task SaveExpenseAsync(UtilityExpense expense)
+        public static async Task<int> SaveExpenseAsync(UtilityExpense expense)
         {
+            // API Call
+            var dto = new SaveUtilityExpenseDto
+            {
+                Id = expense.Id,
+                Category = expense.Category,
+                Location = expense.Location,
+                Amount = expense.Amount,
+                ExpenseDate = expense.ExpenseDate,
+                Description = expense.Description,
+                BillNo = expense.BillNo,
+                BillImagePath = expense.BillImagePath
+            };
+
+            var response = await ApiClient.PostAsync<int>("utilities/expenses", dto);
+            if (response.Success)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 using (var conn = new SqlConnection(ConnectionString))
                 {
                     await conn.OpenAsync();
-                    using (var cmd = new SqlCommand("dbo.sp_AddUtilityExpense", conn) { CommandType = CommandType.StoredProcedure })
+                    using (var cmd = new SqlCommand("dbo.sp_SaveUtilityExpense", conn) { CommandType = CommandType.StoredProcedure })
                     {
-                        cmd.Parameters.AddWithValue("@Category", expense.Category);
+                        cmd.Parameters.AddWithValue("@Id", (object?)expense.Id ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Category", expense.Category ?? "Plumbing");
                         cmd.Parameters.AddWithValue("@Location", expense.Location);
                         cmd.Parameters.AddWithValue("@Amount", expense.Amount);
                         cmd.Parameters.AddWithValue("@ExpenseDate", expense.ExpenseDate.Date);
@@ -88,55 +123,56 @@ namespace StockPortalApp.Data
                         cmd.Parameters.AddWithValue("@BillNo", (object?)expense.BillNo ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@BillImagePath", (object?)expense.BillImagePath ?? DBNull.Value);
 
-                        var res = await cmd.ExecuteScalarAsync();
-                        if (res != null && Convert.ToInt32(res) > 0)
-                        {
-                            expense.Id = Convert.ToInt32(res);
-                        }
+                        var result = await cmd.ExecuteScalarAsync();
+                        return Convert.ToInt32(result);
                     }
                 }
             }
             catch
             {
-                // Fallback to in-memory cache
                 lock (SyncLock)
                 {
-                    if (expense.Id <= 0)
+                    if (expense.Id.HasValue && expense.Id.Value > 0)
                     {
-                        int nextId = InMemExpenses.Count > 0 ? InMemExpenses.Max(e => e.Id) + 1 : 1;
-                        expense.Id = nextId;
+                        var existing = InMemExpenses.FirstOrDefault(e => e.Id == expense.Id.Value);
+                        if (existing != null) InMemExpenses.Remove(existing);
                         InMemExpenses.Add(expense);
+                        return expense.Id.Value;
                     }
                     else
                     {
-                        var existing = InMemExpenses.FirstOrDefault(e => e.Id == expense.Id);
-                        if (existing != null)
-                        {
-                            existing.Category = expense.Category;
-                            existing.Location = expense.Location;
-                            existing.Amount = expense.Amount;
-                            existing.ExpenseDate = expense.ExpenseDate;
-                            existing.Description = expense.Description;
-                            existing.BillNo = expense.BillNo;
-                            existing.BillImagePath = expense.BillImagePath;
-                        }
+                        int nextId = (InMemExpenses.Count > 0 ? InMemExpenses.Max(e => e.Id ?? 0) : 0) + 1;
+                        expense.Id = nextId;
+                        InMemExpenses.Add(expense);
+                        return nextId;
                     }
                 }
             }
+            */
+            return 0;
         }
 
-        public static async Task DeleteExpenseAsync(int expenseId)
+        public static async Task<bool> DeleteExpenseAsync(int id)
         {
+            // API Call
+            var response = await ApiClient.DeleteAsync<bool>($"utilities/expenses/{id}");
+            if (response.Success)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 using (var conn = new SqlConnection(ConnectionString))
                 {
                     await conn.OpenAsync();
-                    string deleteSql = "DELETE FROM [dbo].[UtilityExpenses] WHERE [Id] = @Id";
-                    using (var cmd = new SqlCommand(deleteSql, conn))
+                    using (var cmd = new SqlCommand("dbo.sp_DeleteUtilityExpense", conn) { CommandType = CommandType.StoredProcedure })
                     {
-                        cmd.Parameters.AddWithValue("@Id", expenseId);
-                        await cmd.ExecuteNonQueryAsync();
+                        cmd.Parameters.AddWithValue("@Id", id);
+                        int affected = await cmd.ExecuteNonQueryAsync();
+                        return affected > 0;
                     }
                 }
             }
@@ -144,9 +180,12 @@ namespace StockPortalApp.Data
             {
                 lock (SyncLock)
                 {
-                    InMemExpenses.RemoveAll(e => e.Id == expenseId);
+                    int removed = InMemExpenses.RemoveAll(e => e.Id == id);
+                    return removed > 0;
                 }
             }
+            */
+            return false;
         }
     }
 }

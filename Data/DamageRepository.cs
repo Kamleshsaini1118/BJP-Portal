@@ -1,5 +1,7 @@
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.Damage;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -15,26 +17,23 @@ namespace StockPortalApp.Data
         private static string ConnectionString =>
             ConfigurationManager.ConnectionStrings["StockPortalDb"].ConnectionString;
 
-        private static async Task EnsureImagePathColumnExistsAsync(SqlConnection conn)
-        {
-            try
-            {
-                string sql = @"
-                    IF NOT EXISTS (
-                        SELECT 1 FROM sys.columns 
-                        WHERE object_id = OBJECT_ID('dbo.DamageRecords') AND name = 'ImagePath'
-                    )
-                    BEGIN
-                        ALTER TABLE dbo.DamageRecords ADD ImagePath NVARCHAR(MAX) NULL;
-                    END";
-                using var cmd = new SqlCommand(sql, conn);
-                await cmd.ExecuteNonQueryAsync();
-            }
-            catch { }
-        }
-
         public static async Task<List<DamageRecord>> GetRecordsAsync(DateTime? dateFrom, DateTime? dateTo)
         {
+            // API Call
+            var query = "damage-records";
+            var qParams = new List<string>();
+            if (dateFrom.HasValue) qParams.Add($"dateFrom={dateFrom.Value:yyyy-MM-dd}");
+            if (dateTo.HasValue) qParams.Add($"dateTo={dateTo.Value:yyyy-MM-dd}");
+            if (qParams.Count > 0) query += "?" + string.Join("&", qParams);
+
+            var response = await ApiClient.GetAsync<List<DamageRecord>>(query);
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<DamageRecord>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -111,6 +110,82 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<DamageRecord>();
+        }
+
+        public static async Task<DamageRecord?> GetRecordByIdAsync(int id)
+        {
+            // API Call
+            var response = await ApiClient.GetAsync<DamageRecordDto>($"damage-records/{id}");
+            if (response.Success && response.Data != null)
+            {
+                var d = response.Data;
+                return new DamageRecord
+                {
+                    Id = d.Id,
+                    DamageCode = d.DamageCode,
+                    ItemName = d.ItemName,
+                    Category = d.Category,
+                    Qty = d.Qty,
+                    ReporteeName = d.ReporteeName,
+                    ReporteeNumber = d.ReporteeNumber,
+                    ReporteePosition = d.ReporteePosition,
+                    DamageDate = d.DamageDate,
+                    Remark = d.Remark,
+                    ImagePath = d.ImagePath
+                };
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
+            using var conn = new SqlConnection(ConnectionString);
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand(@"
+                SELECT Id, DamageCode, Category, ItemName, Qty, ReporteeName, 
+                       ReporteeNumber, ReporteePosition, DamageDate, Remark, ImagePath
+                FROM dbo.DamageRecords WHERE Id = @Id", conn);
+            cmd.Parameters.AddWithValue("@Id", id);
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                int imgOrd = -1;
+                try { imgOrd = reader.GetOrdinal("ImagePath"); } catch { }
+                return new DamageRecord
+                {
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    DamageCode = reader.GetString(reader.GetOrdinal("DamageCode")),
+                    ItemName = reader.GetString(reader.GetOrdinal("ItemName")),
+                    Category = reader.IsDBNull(reader.GetOrdinal("Category")) ? null : reader.GetString(reader.GetOrdinal("Category")),
+                    Qty = reader.GetDecimal(reader.GetOrdinal("Qty")),
+                    ReporteeName = reader.IsDBNull(reader.GetOrdinal("ReporteeName")) ? null : reader.GetString(reader.GetOrdinal("ReporteeName")),
+                    ReporteeNumber = reader.IsDBNull(reader.GetOrdinal("ReporteeNumber")) ? null : reader.GetString(reader.GetOrdinal("ReporteeNumber")),
+                    ReporteePosition = reader.IsDBNull(reader.GetOrdinal("ReporteePosition")) ? null : reader.GetString(reader.GetOrdinal("ReporteePosition")),
+                    DamageDate = reader.GetDateTime(reader.GetOrdinal("DamageDate")),
+                    Remark = reader.IsDBNull(reader.GetOrdinal("Remark")) ? null : reader.GetString(reader.GetOrdinal("Remark")),
+                    ImagePath = (imgOrd >= 0 && !reader.IsDBNull(imgOrd)) ? reader.GetString(imgOrd) : null
+                };
+            }
+            */
+            return null;
+        }
+
+        private static async Task EnsureImagePathColumnExistsAsync(SqlConnection conn)
+        {
+            try
+            {
+                string sql = @"
+                    IF NOT EXISTS (
+                        SELECT 1 FROM sys.columns 
+                        WHERE object_id = OBJECT_ID('dbo.DamageRecords') AND name = 'ImagePath'
+                    )
+                    BEGIN
+                        ALTER TABLE dbo.DamageRecords ADD ImagePath NVARCHAR(MAX) NULL;
+                    END";
+                using var cmd = new SqlCommand(sql, conn);
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch { }
         }
 
         /// <summary>Returns (Id, DamageCode) for the newly created record.</summary>
@@ -119,7 +194,39 @@ namespace StockPortalApp.Data
             string? reporteeName, string? reporteeNumber, string? reporteePosition, string? remark,
             string? imagePath = null)
         {
-            string damageCode = $"DMG-{DateTime.Now:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}";
+            // API Call
+            var dto = new
+            {
+                Category = category,
+                ItemName = itemName,
+                Qty = qty,
+                ReporteeName = reporteeName,
+                ReporteeNumber = reporteeNumber,
+                ReporteePosition = reporteePosition,
+                Remark = remark,
+                ImagePath = imagePath
+            };
+
+            var response = await ApiClient.PostAsync<Dictionary<string, object>>("damage-records", dto);
+            if (response.Success && response.Data != null)
+            {
+                int id = 0;
+                string code = string.Empty;
+                if (response.Data.TryGetValue("id", out var idVal) || response.Data.TryGetValue("Id", out idVal))
+                {
+                    int.TryParse(idVal?.ToString(), out id);
+                }
+                if (response.Data.TryGetValue("damageCode", out var codeVal) || response.Data.TryGetValue("DamageCode", out codeVal))
+                {
+                    code = codeVal?.ToString() ?? string.Empty;
+                }
+                return (id, code);
+            }
+
+            throw new InvalidOperationException(response.Message ?? "Failed to save damage record.");
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
 
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
@@ -147,54 +254,11 @@ namespace StockPortalApp.Data
                     return (id, returnedCode);
                 }
             }
-            catch (SqlException ex) when (ex.Message.Contains("too many arguments", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("DamageCode", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("NULL", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("ImagePath", StringComparison.OrdinalIgnoreCase))
-            {
-                // Fall back to direct SQL execution if the stored procedure fails due to missing parameter or NULL constraint
-            }
+            catch { }
 
-            try
-            {
-                string fallbackSqlWithImage = @"
-                    INSERT INTO dbo.DamageRecords (DamageCode, Category, ItemName, Qty, ReporteeName, ReporteeNumber, ReporteePosition, Remark, ImagePath, DamageDate)
-                    VALUES (@DamageCode, @Category, @ItemName, @Qty, @ReporteeName, @ReporteeNumber, @ReporteePosition, @Remark, @ImagePath, GETDATE());
-                    SELECT SCOPE_IDENTITY() AS Id;";
-
-                using var fallbackCmd = new SqlCommand(fallbackSqlWithImage, conn);
-                fallbackCmd.Parameters.AddWithValue("@DamageCode", damageCode);
-                fallbackCmd.Parameters.AddWithValue("@Category", (object?)category ?? DBNull.Value);
-                fallbackCmd.Parameters.AddWithValue("@ItemName", itemName);
-                fallbackCmd.Parameters.AddWithValue("@Qty", qty);
-                fallbackCmd.Parameters.AddWithValue("@ReporteeName", (object?)reporteeName ?? DBNull.Value);
-                fallbackCmd.Parameters.AddWithValue("@ReporteeNumber", (object?)reporteeNumber ?? DBNull.Value);
-                fallbackCmd.Parameters.AddWithValue("@ReporteePosition", (object?)reporteePosition ?? DBNull.Value);
-                fallbackCmd.Parameters.AddWithValue("@Remark", (object?)remark ?? DBNull.Value);
-                fallbackCmd.Parameters.AddWithValue("@ImagePath", (object?)imagePath ?? DBNull.Value);
-
-                var res = await fallbackCmd.ExecuteScalarAsync();
-                int newId = Convert.ToInt32(res);
-                return (newId, damageCode);
-            }
-            catch (SqlException)
-            {
-                string fallbackSqlWithoutImage = @"
-                    INSERT INTO dbo.DamageRecords (DamageCode, Category, ItemName, Qty, ReporteeName, ReporteeNumber, ReporteePosition, Remark, DamageDate)
-                    VALUES (@DamageCode, @Category, @ItemName, @Qty, @ReporteeName, @ReporteeNumber, @ReporteePosition, @Remark, GETDATE());
-                    SELECT SCOPE_IDENTITY() AS Id;";
-
-                using var fallbackCmdNoImage = new SqlCommand(fallbackSqlWithoutImage, conn);
-                fallbackCmdNoImage.Parameters.AddWithValue("@DamageCode", damageCode);
-                fallbackCmdNoImage.Parameters.AddWithValue("@Category", (object?)category ?? DBNull.Value);
-                fallbackCmdNoImage.Parameters.AddWithValue("@ItemName", itemName);
-                fallbackCmdNoImage.Parameters.AddWithValue("@Qty", qty);
-                fallbackCmdNoImage.Parameters.AddWithValue("@ReporteeName", (object?)reporteeName ?? DBNull.Value);
-                fallbackCmdNoImage.Parameters.AddWithValue("@ReporteeNumber", (object?)reporteeNumber ?? DBNull.Value);
-                fallbackCmdNoImage.Parameters.AddWithValue("@ReporteePosition", (object?)reporteePosition ?? DBNull.Value);
-                fallbackCmdNoImage.Parameters.AddWithValue("@Remark", (object?)remark ?? DBNull.Value);
-
-                var res = await fallbackCmdNoImage.ExecuteScalarAsync();
-                int newId = Convert.ToInt32(res);
-                return (newId, damageCode);
-            }
+            return (0, damageCode);
+            return (0, string.Empty);
+            */
         }
     }
 }

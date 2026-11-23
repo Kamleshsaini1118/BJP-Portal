@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.Quotations;
 
 namespace StockPortalApp.Data
 {
@@ -21,6 +23,16 @@ namespace StockPortalApp.Data
 
         public static async Task<List<QuotationProject>> GetProjectsAsync(string searchKeyword = "")
         {
+            // API Call
+            var url = "quotations/projects" + (!string.IsNullOrWhiteSpace(searchKeyword) ? $"?searchKeyword={Uri.EscapeDataString(searchKeyword)}" : "");
+            var response = await ApiClient.GetAsync<List<QuotationProject>>(url);
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 var projects = new List<QuotationProject>();
@@ -58,16 +70,16 @@ namespace StockPortalApp.Data
                             {
                                 projects.Add(new QuotationProject
                                 {
-                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                    ProjectName = reader.GetString(reader.GetOrdinal("ProjectName")),
-                                    ClientDepartment = reader.GetString(reader.GetOrdinal("ClientDepartment")),
-                                    Category = reader.GetString(reader.GetOrdinal("Category")),
-                                    Status = reader.GetString(reader.GetOrdinal("Status")),
-                                    DateCreated = reader.GetDateTime(reader.GetOrdinal("DateCreated")),
-                                    EstimatedBudget = reader.IsDBNull(reader.GetOrdinal("EstimatedBudget")) ? null : reader.GetDecimal(reader.GetOrdinal("EstimatedBudget")),
-                                    Remarks = reader.IsDBNull(reader.GetOrdinal("Remarks")) ? string.Empty : reader.GetString(reader.GetOrdinal("Remarks")),
-                                    QuotationCount = reader.GetInt32(reader.GetOrdinal("QuotationCount")),
-                                    LowestQuote = reader.GetDecimal(reader.GetOrdinal("LowestQuote"))
+                                    Id = reader.GetInt32(0),
+                                    ProjectName = reader.GetString(1),
+                                    ClientDepartment = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                                    Category = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                                    Status = reader.IsDBNull(4) ? "Draft" : reader.GetString(4),
+                                    DateCreated = reader.GetDateTime(5),
+                                    EstimatedBudget = reader.IsDBNull(6) ? 0 : reader.GetDecimal(6),
+                                    Remarks = reader.IsDBNull(7) ? null : reader.GetString(7),
+                                    QuotationCount = reader.GetInt32(8),
+                                    LowestQuote = reader.GetDecimal(9)
                                 });
                             }
                         }
@@ -79,30 +91,119 @@ namespace StockPortalApp.Data
             {
                 lock (SyncLock)
                 {
-                    RecalculateInMemMetrics();
                     var query = InMemProjects.AsEnumerable();
                     if (!string.IsNullOrWhiteSpace(searchKeyword))
                     {
-                        string k = searchKeyword.Trim().ToLowerInvariant();
-                        query = query.Where(p =>
-                            p.ProjectName.ToLowerInvariant().Contains(k) ||
-                            p.ClientDepartment.ToLowerInvariant().Contains(k) ||
-                            p.Category.ToLowerInvariant().Contains(k) ||
-                            p.Status.ToLowerInvariant().Contains(k));
+                        var s = searchKeyword.Trim().ToLowerInvariant();
+                        query = query.Where(p => p.ProjectName.ToLowerInvariant().Contains(s)
+                                              || p.ClientDepartment.ToLowerInvariant().Contains(s)
+                                              || p.Category.ToLowerInvariant().Contains(s));
                     }
                     return query.OrderByDescending(p => p.DateCreated).ToList();
                 }
             }
+            */
+            return new List<QuotationProject>();
+        }
+
+        public static async Task<List<VendorQuotation>> GetQuotationsForProjectAsync(int projectId)
+        {
+            // API Call
+            var response = await ApiClient.GetAsync<List<VendorQuotation>>($"quotations/projects/{projectId}/quotes");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
+            try
+            {
+                var quotes = new List<VendorQuotation>();
+                using (var conn = new SqlConnection(ConnectionString))
+                {
+                    await conn.OpenAsync();
+
+                    string sql = @"
+                        SELECT [Id], [ProjectId], [VendorName], [QuotationReference], 
+                               [QuotationAmount], [QuoteDate], [DeliveryDays], [Status], 
+                               [IsLowest], [Remarks], [DocumentPath]
+                        FROM [dbo].[VendorQuotations]
+                        WHERE [ProjectId] = @ProjectId
+                        ORDER BY [QuotationAmount] ASC";
+
+                    using (var cmd = new SqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@ProjectId", projectId);
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                quotes.Add(new VendorQuotation
+                                {
+                                    Id = reader.GetInt32(0),
+                                    ProjectId = reader.GetInt32(1),
+                                    VendorName = reader.GetString(2),
+                                    QuotationReference = reader.IsDBNull(3) ? null : reader.GetString(3),
+                                    QuotationAmount = reader.GetDecimal(4),
+                                    QuoteDate = reader.GetDateTime(5),
+                                    DeliveryDays = reader.IsDBNull(6) ? 7 : reader.GetInt32(6),
+                                    Status = reader.IsDBNull(7) ? "Under Review" : reader.GetString(7),
+                                    IsLowest = !reader.IsDBNull(8) && reader.GetBoolean(8),
+                                    Remarks = reader.IsDBNull(9) ? null : reader.GetString(9),
+                                    DocumentPath = reader.IsDBNull(10) ? null : reader.GetString(10)
+                                });
+                            }
+                        }
+                    }
+                }
+                return quotes;
+            }
+            catch
+            {
+                lock (SyncLock)
+                {
+                    return InMemQuotations.Where(q => q.ProjectId == projectId).OrderBy(q => q.QuotationAmount).ToList();
+                }
+            }
+            */
+            return new List<VendorQuotation>();
         }
 
         public static async Task<QuotationProject?> GetProjectByIdAsync(int id)
         {
-            var projects = await GetProjectsAsync();
-            return projects.FirstOrDefault(p => p.Id == id);
+            // API Call
+            var response = await ApiClient.GetAsync<QuotationProject>($"quotations/projects/{id}");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+            return null;
         }
 
-        public static async Task SaveProjectAsync(QuotationProject project)
+        public static async Task<int> SaveProjectAsync(QuotationProject project)
         {
+            // API Call
+            var dto = new
+            {
+                Id = project.Id,
+                Title = project.ProjectName,
+                ProjectName = project.ProjectName,
+                ClientDepartment = project.ClientDepartment,
+                Category = project.Category,
+                Status = project.Status,
+                EstimatedBudget = project.EstimatedBudget,
+                Remarks = project.Remarks
+            };
+            var response = await ApiClient.PostAsync<int>("quotations/projects", dto);
+            if (response.Success)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 using (var conn = new SqlConnection(ConnectionString))
@@ -112,49 +213,49 @@ namespace StockPortalApp.Data
                     {
                         string sql = @"
                             INSERT INTO [dbo].[QuotationProjects]
-                            ([ProjectName], [ClientDepartment], [Category], [EstimatedBudget], [Status], [Remarks], [DateCreated])
-                            VALUES (@ProjectName, @ClientDepartment, @Category, @EstimatedBudget, @Status, @Remarks, GETDATE());
-                            SELECT SCOPE_IDENTITY();";
+                            ([ProjectName], [ClientDepartment], [Category], [Status], [DateCreated], [EstimatedBudget], [Remarks])
+                            VALUES (@Name, @Dept, @Cat, @Status, @Date, @Budget, @Remarks);
+                            SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                         using (var cmd = new SqlCommand(sql, conn))
                         {
-                            cmd.Parameters.AddWithValue("@ProjectName", project.ProjectName);
-                            cmd.Parameters.AddWithValue("@ClientDepartment", project.ClientDepartment);
-                            cmd.Parameters.AddWithValue("@Category", project.Category);
-                            cmd.Parameters.AddWithValue("@EstimatedBudget", (object?)project.EstimatedBudget ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@Status", string.IsNullOrWhiteSpace(project.Status) ? "Open" : project.Status);
+                            cmd.Parameters.AddWithValue("@Name", project.ProjectName);
+                            cmd.Parameters.AddWithValue("@Dept", project.ClientDepartment ?? (object)DBNull.Value);
+                            cmd.Parameters.AddWithValue("@Cat", project.Category ?? (object)DBNull.Value);
+                            cmd.Parameters.AddWithValue("@Status", project.Status ?? "Draft");
+                            cmd.Parameters.AddWithValue("@Date", project.DateCreated);
+                            cmd.Parameters.AddWithValue("@Budget", project.EstimatedBudget);
                             cmd.Parameters.AddWithValue("@Remarks", (object?)project.Remarks ?? DBNull.Value);
 
-                            var newIdObj = await cmd.ExecuteScalarAsync();
-                            if (newIdObj != null && Convert.ToInt32(newIdObj) > 0)
-                            {
-                                project.Id = Convert.ToInt32(newIdObj);
-                            }
+                            var newId = (int)(await cmd.ExecuteScalarAsync() ?? 0);
+                            project.Id = newId;
+                            return newId;
                         }
                     }
                     else
                     {
                         string sql = @"
                             UPDATE [dbo].[QuotationProjects]
-                            SET [ProjectName] = @ProjectName,
-                                [ClientDepartment] = @ClientDepartment,
-                                [Category] = @Category,
-                                [EstimatedBudget] = @EstimatedBudget,
+                            SET [ProjectName] = @Name,
+                                [ClientDepartment] = @Dept,
+                                [Category] = @Cat,
                                 [Status] = @Status,
+                                [EstimatedBudget] = @Budget,
                                 [Remarks] = @Remarks
                             WHERE [Id] = @Id";
 
                         using (var cmd = new SqlCommand(sql, conn))
                         {
                             cmd.Parameters.AddWithValue("@Id", project.Id);
-                            cmd.Parameters.AddWithValue("@ProjectName", project.ProjectName);
-                            cmd.Parameters.AddWithValue("@ClientDepartment", project.ClientDepartment);
-                            cmd.Parameters.AddWithValue("@Category", project.Category);
-                            cmd.Parameters.AddWithValue("@EstimatedBudget", (object?)project.EstimatedBudget ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@Status", project.Status);
+                            cmd.Parameters.AddWithValue("@Name", project.ProjectName);
+                            cmd.Parameters.AddWithValue("@Dept", project.ClientDepartment ?? (object)DBNull.Value);
+                            cmd.Parameters.AddWithValue("@Cat", project.Category ?? (object)DBNull.Value);
+                            cmd.Parameters.AddWithValue("@Status", project.Status ?? "Draft");
+                            cmd.Parameters.AddWithValue("@Budget", project.EstimatedBudget);
                             cmd.Parameters.AddWithValue("@Remarks", (object?)project.Remarks ?? DBNull.Value);
 
                             await cmd.ExecuteNonQueryAsync();
+                            return project.Id;
                         }
                     }
                 }
@@ -166,39 +267,55 @@ namespace StockPortalApp.Data
                     if (project.Id <= 0)
                     {
                         project.Id = InMemProjects.Count > 0 ? InMemProjects.Max(p => p.Id) + 1 : 1;
-                        project.DateCreated = DateTime.Today;
                         InMemProjects.Add(project);
                     }
                     else
                     {
                         var existing = InMemProjects.FirstOrDefault(p => p.Id == project.Id);
-                        if (existing != null)
-                        {
-                            existing.ProjectName = project.ProjectName;
-                            existing.ClientDepartment = project.ClientDepartment;
-                            existing.Category = project.Category;
-                            existing.EstimatedBudget = project.EstimatedBudget;
-                            existing.Status = project.Status;
-                            existing.Remarks = project.Remarks;
-                        }
+                        if (existing != null) InMemProjects.Remove(existing);
+                        InMemProjects.Add(project);
                     }
-                    RecalculateInMemMetrics();
+                    return project.Id;
                 }
             }
+            */
+            return 0;
         }
 
-        public static async Task DeleteProjectAsync(int projectId)
+        public static async Task<bool> DeleteProjectAsync(int projectId)
         {
+            // API Call
+            var response = await ApiClient.DeleteAsync<bool>($"quotations/projects/{projectId}");
+            if (response.Success)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 using (var conn = new SqlConnection(ConnectionString))
                 {
                     await conn.OpenAsync();
-                    string sql = "DELETE FROM [dbo].[QuotationProjects] WHERE [Id] = @Id";
-                    using (var cmd = new SqlCommand(sql, conn))
+                    using (var tran = conn.BeginTransaction())
                     {
-                        cmd.Parameters.AddWithValue("@Id", projectId);
-                        await cmd.ExecuteNonQueryAsync();
+                        string delQuotes = "DELETE FROM [dbo].[VendorQuotations] WHERE [ProjectId] = @ProjectId";
+                        using (var cmd1 = new SqlCommand(delQuotes, conn, tran))
+                        {
+                            cmd1.Parameters.AddWithValue("@ProjectId", projectId);
+                            await cmd1.ExecuteNonQueryAsync();
+                        }
+
+                        string delProj = "DELETE FROM [dbo].[QuotationProjects] WHERE [Id] = @Id";
+                        using (var cmd2 = new SqlCommand(delProj, conn, tran))
+                        {
+                            cmd2.Parameters.AddWithValue("@Id", projectId);
+                            await cmd2.ExecuteNonQueryAsync();
+                        }
+
+                        tran.Commit();
+                        return true;
                     }
                 }
             }
@@ -206,211 +323,140 @@ namespace StockPortalApp.Data
             {
                 lock (SyncLock)
                 {
-                    InMemProjects.RemoveAll(p => p.Id == projectId);
                     InMemQuotations.RemoveAll(q => q.ProjectId == projectId);
+                    InMemProjects.RemoveAll(p => p.Id == projectId);
+                    return true;
                 }
             }
+            */
+            return false;
         }
 
-        public static async Task<List<VendorQuotation>> GetQuotationsForProjectAsync(int projectId)
+        public static async Task<int> SaveQuotationAsync(VendorQuotation quote)
         {
-            try
+            // API Call
+            var dto = new
             {
-                var list = new List<VendorQuotation>();
-                using (var conn = new SqlConnection(ConnectionString))
-                {
-                    await conn.OpenAsync();
-                    string sql = @"
-                        SELECT q.[Id], q.[ProjectId], p.[ProjectName], q.[VendorName], q.[QuotationNumber], 
-                               q.[QuotationAmount], q.[Status], q.[QuotationDate], q.[ValidUntil], q.[Remarks], q.[FilePath], q.[IsLowestQuote]
-                        FROM [dbo].[VendorQuotations] q
-                        LEFT JOIN [dbo].[QuotationProjects] p ON q.[ProjectId] = p.[Id]
-                        WHERE q.[ProjectId] = @ProjectId
-                        ORDER BY q.[QuotationAmount] ASC";
-
-                    using (var cmd = new SqlCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@ProjectId", projectId);
-                        using (var reader = await cmd.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                list.Add(new VendorQuotation
-                                {
-                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                    ProjectId = reader.GetInt32(reader.GetOrdinal("ProjectId")),
-                                    ProjectName = reader.IsDBNull(reader.GetOrdinal("ProjectName")) ? string.Empty : reader.GetString(reader.GetOrdinal("ProjectName")),
-                                    VendorName = reader.GetString(reader.GetOrdinal("VendorName")),
-                                    QuotationNumber = reader.GetString(reader.GetOrdinal("QuotationNumber")),
-                                    QuotationAmount = reader.GetDecimal(reader.GetOrdinal("QuotationAmount")),
-                                    Status = reader.GetString(reader.GetOrdinal("Status")),
-                                    QuotationDate = reader.GetDateTime(reader.GetOrdinal("QuotationDate")),
-                                    ValidUntil = reader.IsDBNull(reader.GetOrdinal("ValidUntil")) ? null : reader.GetDateTime(reader.GetOrdinal("ValidUntil")),
-                                    Remarks = reader.IsDBNull(reader.GetOrdinal("Remarks")) ? string.Empty : reader.GetString(reader.GetOrdinal("Remarks")),
-                                    FilePath = reader.IsDBNull(reader.GetOrdinal("FilePath")) ? string.Empty : reader.GetString(reader.GetOrdinal("FilePath")),
-                                    IsLowestQuote = !reader.IsDBNull(reader.GetOrdinal("IsLowestQuote")) && reader.GetBoolean(reader.GetOrdinal("IsLowestQuote"))
-                                });
-                            }
-                        }
-                    }
-                }
-
-                if (list.Count > 0)
-                {
-                    decimal minVal = list.Min(q => q.QuotationAmount);
-                    foreach (var q in list)
-                    {
-                        q.IsLowestQuote = (q.QuotationAmount == minVal);
-                    }
-                }
-
-                return list;
-            }
-            catch
+                Id = quote.Id,
+                ProjectId = quote.ProjectId,
+                VendorName = quote.VendorName,
+                QuotationReference = quote.QuotationNumber,
+                QuotationAmount = quote.QuotationAmount,
+                DateQuoted = quote.QuotationDate,
+                DeliveryDays = 7,
+                Status = quote.Status,
+                IsLowest = quote.IsLowestQuote,
+                Remarks = quote.Remarks,
+                DocumentPath = quote.FilePath
+            };
+            var response = await ApiClient.PostAsync<int>("quotations/quotes", dto);
+            if (response.Success)
             {
-                lock (SyncLock)
-                {
-                    var list = InMemQuotations.Where(q => q.ProjectId == projectId).OrderBy(q => q.QuotationAmount).ToList();
-                    if (list.Count > 0)
-                    {
-                        decimal minVal = list.Min(q => q.QuotationAmount);
-                        foreach (var q in list)
-                        {
-                            q.IsLowestQuote = (q.QuotationAmount == minVal);
-                        }
-                    }
-                    return list;
-                }
+                return response.Data;
             }
-        }
 
-        public static async Task SaveQuotationAsync(VendorQuotation quotation)
-        {
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 using (var conn = new SqlConnection(ConnectionString))
                 {
                     await conn.OpenAsync();
-
-                    if (quotation.Id <= 0)
+                    if (quote.Id <= 0)
                     {
                         string sql = @"
                             INSERT INTO [dbo].[VendorQuotations]
-                            ([ProjectId], [VendorName], [QuotationNumber], [QuotationAmount], [Status], [QuotationDate], [ValidUntil], [Remarks], [FilePath], [IsLowestQuote], [CreatedAt])
-                            VALUES (@ProjectId, @VendorName, @QuotationNumber, @QuotationAmount, @Status, @QuotationDate, @ValidUntil, @Remarks, @FilePath, @IsLowestQuote, GETDATE());
-                            SELECT SCOPE_IDENTITY();";
+                            ([ProjectId], [VendorName], [QuotationReference], [QuotationAmount], [QuoteDate], [DeliveryDays], [Status], [IsLowest], [Remarks], [DocumentPath])
+                            VALUES (@ProjId, @Vendor, @Ref, @Amt, @Date, @Days, @Status, @Lowest, @Remarks, @Doc);
+                            SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                         using (var cmd = new SqlCommand(sql, conn))
                         {
-                            cmd.Parameters.AddWithValue("@ProjectId", quotation.ProjectId);
-                            cmd.Parameters.AddWithValue("@VendorName", quotation.VendorName);
-                            cmd.Parameters.AddWithValue("@QuotationNumber", quotation.QuotationNumber);
-                            cmd.Parameters.AddWithValue("@QuotationAmount", quotation.QuotationAmount);
-                            cmd.Parameters.AddWithValue("@Status", string.IsNullOrWhiteSpace(quotation.Status) ? "Pending Review" : quotation.Status);
-                            cmd.Parameters.AddWithValue("@QuotationDate", quotation.QuotationDate);
-                            cmd.Parameters.AddWithValue("@ValidUntil", (object?)quotation.ValidUntil ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@Remarks", (object?)quotation.Remarks ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@FilePath", (object?)quotation.FilePath ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@IsLowestQuote", quotation.IsLowestQuote);
+                            cmd.Parameters.AddWithValue("@ProjId", quote.ProjectId);
+                            cmd.Parameters.AddWithValue("@Vendor", quote.VendorName);
+                            cmd.Parameters.AddWithValue("@Ref", (object?)quote.QuotationReference ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@Amt", quote.QuotationAmount);
+                            cmd.Parameters.AddWithValue("@Date", quote.QuoteDate);
+                            cmd.Parameters.AddWithValue("@Days", quote.DeliveryDays);
+                            cmd.Parameters.AddWithValue("@Status", quote.Status ?? "Under Review");
+                            cmd.Parameters.AddWithValue("@Lowest", quote.IsLowest);
+                            cmd.Parameters.AddWithValue("@Remarks", (object?)quote.Remarks ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@Doc", (object?)quote.DocumentPath ?? DBNull.Value);
 
-                            var newIdObj = await cmd.ExecuteScalarAsync();
-                            if (newIdObj != null && Convert.ToInt32(newIdObj) > 0)
-                            {
-                                quotation.Id = Convert.ToInt32(newIdObj);
-                            }
+                            var newId = (int)(await cmd.ExecuteScalarAsync() ?? 0);
+                            quote.Id = newId;
                         }
                     }
                     else
                     {
                         string sql = @"
                             UPDATE [dbo].[VendorQuotations]
-                            SET [ProjectId] = @ProjectId,
-                                [VendorName] = @VendorName,
-                                [QuotationNumber] = @QuotationNumber,
-                                [QuotationAmount] = @QuotationAmount,
+                            SET [VendorName] = @Vendor,
+                                [QuotationReference] = @Ref,
+                                [QuotationAmount] = @Amt,
+                                [QuoteDate] = @Date,
+                                [DeliveryDays] = @Days,
                                 [Status] = @Status,
-                                [QuotationDate] = @QuotationDate,
-                                [ValidUntil] = @ValidUntil,
+                                [IsLowest] = @Lowest,
                                 [Remarks] = @Remarks,
-                                [FilePath] = @FilePath,
-                                [IsLowestQuote] = @IsLowestQuote
+                                [DocumentPath] = @Doc
                             WHERE [Id] = @Id";
 
                         using (var cmd = new SqlCommand(sql, conn))
                         {
-                            cmd.Parameters.AddWithValue("@Id", quotation.Id);
-                            cmd.Parameters.AddWithValue("@ProjectId", quotation.ProjectId);
-                            cmd.Parameters.AddWithValue("@VendorName", quotation.VendorName);
-                            cmd.Parameters.AddWithValue("@QuotationNumber", quotation.QuotationNumber);
-                            cmd.Parameters.AddWithValue("@QuotationAmount", quotation.QuotationAmount);
-                            cmd.Parameters.AddWithValue("@Status", quotation.Status);
-                            cmd.Parameters.AddWithValue("@QuotationDate", quotation.QuotationDate);
-                            cmd.Parameters.AddWithValue("@ValidUntil", (object?)quotation.ValidUntil ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@Remarks", (object?)quotation.Remarks ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@FilePath", (object?)quotation.FilePath ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@IsLowestQuote", quotation.IsLowestQuote);
+                            cmd.Parameters.AddWithValue("@Id", quote.Id);
+                            cmd.Parameters.AddWithValue("@Vendor", quote.VendorName);
+                            cmd.Parameters.AddWithValue("@Ref", (object?)quote.QuotationReference ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@Amt", quote.QuotationAmount);
+                            cmd.Parameters.AddWithValue("@Date", quote.QuoteDate);
+                            cmd.Parameters.AddWithValue("@Days", quote.DeliveryDays);
+                            cmd.Parameters.AddWithValue("@Status", quote.Status ?? "Under Review");
+                            cmd.Parameters.AddWithValue("@Lowest", quote.IsLowest);
+                            cmd.Parameters.AddWithValue("@Remarks", (object?)quote.Remarks ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@Doc", (object?)quote.DocumentPath ?? DBNull.Value);
 
                             await cmd.ExecuteNonQueryAsync();
                         }
                     }
 
-                    // Recalculate project metrics in SQL
-                    string syncSql = @"
-                        UPDATE p
-                        SET p.[QuotationCount] = (SELECT COUNT(1) FROM [dbo].[VendorQuotations] q WHERE q.[ProjectId] = p.[Id]),
-                            p.[LowestQuote] = ISNULL((SELECT MIN(q.[QuotationAmount]) FROM [dbo].[VendorQuotations] q WHERE q.[ProjectId] = p.[Id]), 0)
-                        FROM [dbo].[QuotationProjects] p
-                        WHERE p.[Id] = @ProjectId";
-
-                    using (var cmdSync = new SqlCommand(syncSql, conn))
-                    {
-                        cmdSync.Parameters.AddWithValue("@ProjectId", quotation.ProjectId);
-                        await cmdSync.ExecuteNonQueryAsync();
-                    }
+                    // Recalculate lowest quote flag for all quotations of this project
+                    await RecalculateLowestQuotesAsync(conn, quote.ProjectId);
+                    return quote.Id;
                 }
             }
             catch
             {
                 lock (SyncLock)
                 {
-                    var proj = InMemProjects.FirstOrDefault(p => p.Id == quotation.ProjectId);
-                    if (proj != null)
+                    if (quote.Id <= 0)
                     {
-                        quotation.ProjectName = proj.ProjectName;
-                    }
-
-                    if (quotation.Id <= 0)
-                    {
-                        quotation.Id = InMemQuotations.Count > 0 ? InMemQuotations.Max(q => q.Id) + 1 : 1;
-                        InMemQuotations.Add(quotation);
+                        quote.Id = InMemQuotations.Count > 0 ? InMemQuotations.Max(q => q.Id) + 1 : 1;
+                        InMemQuotations.Add(quote);
                     }
                     else
                     {
-                        var existing = InMemQuotations.FirstOrDefault(q => q.Id == quotation.Id);
-                        if (existing != null)
-                        {
-                            existing.ProjectId = quotation.ProjectId;
-                            existing.ProjectName = quotation.ProjectName;
-                            existing.VendorName = quotation.VendorName;
-                            existing.QuotationNumber = quotation.QuotationNumber;
-                            existing.QuotationAmount = quotation.QuotationAmount;
-                            existing.Status = quotation.Status;
-                            existing.QuotationDate = quotation.QuotationDate;
-                            existing.ValidUntil = quotation.ValidUntil;
-                            existing.Remarks = quotation.Remarks;
-                            if (!string.IsNullOrWhiteSpace(quotation.FilePath))
-                            {
-                                existing.FilePath = quotation.FilePath;
-                            }
-                        }
+                        var existing = InMemQuotations.FirstOrDefault(q => q.Id == quote.Id);
+                        if (existing != null) InMemQuotations.Remove(existing);
+                        InMemQuotations.Add(quote);
                     }
-                    RecalculateInMemMetrics();
+                    return quote.Id;
                 }
             }
+            */
+            return 0;
         }
 
-        public static async Task UpdateQuotationStatusAsync(int quotationId, string newStatus)
+        public static async Task<bool> UpdateQuotationStatusAsync(int quotationId, string newStatus)
         {
+            // API Call
+            var response = await ApiClient.PatchAsync<bool>($"quotations/quotes/{quotationId}/status", newStatus);
+            if (response.Success)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 using (var conn = new SqlConnection(ConnectionString))
@@ -421,7 +467,7 @@ namespace StockPortalApp.Data
                     {
                         cmd.Parameters.AddWithValue("@Id", quotationId);
                         cmd.Parameters.AddWithValue("@Status", newStatus);
-                        await cmd.ExecuteNonQueryAsync();
+                        return await cmd.ExecuteNonQueryAsync() > 0;
                     }
                 }
             }
@@ -429,18 +475,30 @@ namespace StockPortalApp.Data
             {
                 lock (SyncLock)
                 {
-                    var existing = InMemQuotations.FirstOrDefault(q => q.Id == quotationId);
-                    if (existing != null)
+                    var q = InMemQuotations.FirstOrDefault(x => x.Id == quotationId);
+                    if (q != null)
                     {
-                        existing.Status = newStatus;
+                        q.Status = newStatus;
+                        return true;
                     }
-                    RecalculateInMemMetrics();
+                    return false;
                 }
             }
+            */
+            return false;
         }
 
-        public static async Task DeleteQuotationAsync(int quotationId)
+        public static async Task<bool> DeleteQuotationAsync(int quotationId)
         {
+            // API Call
+            var response = await ApiClient.DeleteAsync<bool>($"quotations/quotes/{quotationId}");
+            if (response.Success)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 using (var conn = new SqlConnection(ConnectionString))
@@ -450,7 +508,7 @@ namespace StockPortalApp.Data
                     using (var cmd = new SqlCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@Id", quotationId);
-                        await cmd.ExecuteNonQueryAsync();
+                        return await cmd.ExecuteNonQueryAsync() > 0;
                     }
                 }
             }
@@ -459,31 +517,31 @@ namespace StockPortalApp.Data
                 lock (SyncLock)
                 {
                     InMemQuotations.RemoveAll(q => q.Id == quotationId);
-                    RecalculateInMemMetrics();
+                    return true;
                 }
             }
+            */
+            return false;
         }
 
-        private static void RecalculateInMemMetrics()
+        private static async Task RecalculateLowestQuotesAsync(SqlConnection conn, int projectId)
         {
-            foreach (var proj in InMemProjects)
+            try
             {
-                var projQuotes = InMemQuotations.Where(q => q.ProjectId == proj.Id).ToList();
-                proj.QuotationCount = projQuotes.Count;
-                if (projQuotes.Count > 0)
-                {
-                    decimal minVal = projQuotes.Min(q => q.QuotationAmount);
-                    proj.LowestQuote = minVal;
-                    foreach (var q in projQuotes)
-                    {
-                        q.IsLowestQuote = (q.QuotationAmount == minVal);
-                    }
-                }
-                else
-                {
-                    proj.LowestQuote = 0m;
-                }
+                string sql = @"
+                    UPDATE [dbo].[VendorQuotations] SET [IsLowest] = 0 WHERE [ProjectId] = @ProjectId;
+                    WITH Ranked AS (
+                        SELECT TOP 1 [Id] FROM [dbo].[VendorQuotations]
+                        WHERE [ProjectId] = @ProjectId
+                        ORDER BY [QuotationAmount] ASC
+                    )
+                    UPDATE [dbo].[VendorQuotations] SET [IsLowest] = 1 WHERE [Id] IN (SELECT [Id] FROM Ranked);";
+
+                using var cmd = new SqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@ProjectId", projectId);
+                await cmd.ExecuteNonQueryAsync();
             }
+            catch { }
         }
     }
 }

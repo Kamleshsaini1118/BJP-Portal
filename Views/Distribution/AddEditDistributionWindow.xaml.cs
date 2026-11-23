@@ -1,6 +1,7 @@
 using StockPortalApp.Data;
- using StockPortalApp.Helpers;
+using StockPortalApp.Helpers;
 using StockPortalApp.Models;
+using StockPortal.Core.DTOs.Distributions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -225,15 +226,24 @@ namespace StockPortalApp
             SubmitButton.IsEnabled = false;
             try
             {
-                var (id, shipmentId) = await DistributionRepository.SaveHeaderAsync(
-                    _editingDistribution?.Id, destination, dispatchDate, receiverName, receiverNumber, position, remark);
-
-                await DistributionRepository.ClearItemsAsync(id);
-                foreach (var row in rows)
+                var dto = new SaveDistributionDto
                 {
-                    var qty = decimal.Parse(row.Qty);
-                    await DistributionRepository.AddItemAsync(id, row.Category, row.ProductName, qty);
-                }
+                    Id = _editingDistribution?.Id,
+                    Destination = destination,
+                    Date = dispatchDate,
+                    ReceiverName = string.IsNullOrWhiteSpace(receiverName) ? null : receiverName,
+                    ReceiverNumber = string.IsNullOrWhiteSpace(receiverNumber) ? null : receiverNumber,
+                    Position = string.IsNullOrWhiteSpace(position) ? null : position,
+                    Remark = string.IsNullOrWhiteSpace(remark) ? null : remark,
+                    Items = rows.Select(r => new DistributionItemRowDto
+                    {
+                        Category = r.Category,
+                        ProductName = r.ProductName,
+                        Qty = decimal.Parse(r.Qty)
+                    }).ToList()
+                };
+
+                var (id, shipmentId) = await DistributionRepository.SaveDistributionAsync(dto);
 
                 var displayShipmentId = string.IsNullOrEmpty(shipmentId) ? _editingDistribution!.ShipmentId : shipmentId;
 

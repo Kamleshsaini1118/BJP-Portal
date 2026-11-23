@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
 
 namespace StockPortalApp.Data
 {
@@ -16,6 +18,34 @@ namespace StockPortalApp.Data
         /// <summary>List: one row per item issued. Pass status = "Pending", "Deposited", or null for All.</summary>
         public static async Task<List<IssueRecordLine>> GetRecordsAsync(string? status, DateTime? dateFrom, DateTime? dateTo)
         {
+            // API Call
+            var qParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(status)) qParams.Add($"status={Uri.EscapeDataString(status)}");
+            if (dateFrom.HasValue) qParams.Add($"dateFrom={dateFrom.Value:yyyy-MM-dd}");
+            if (dateTo.HasValue) qParams.Add($"dateTo={dateTo.Value:yyyy-MM-dd}");
+            var url = "issues" + (qParams.Count > 0 ? "?" + string.Join("&", qParams) : "");
+
+            var response = await ApiClient.GetAsync<List<StockPortal.Core.DTOs.Issues.IssueRecordLineDto>>(url);
+            if (response.Success && response.Data != null)
+            {
+                return response.Data.Select(d => new IssueRecordLine
+                {
+                    Id = d.Id,
+                    IssueCode = d.IssueCode ?? "",
+                    EventName = !string.IsNullOrWhiteSpace(d.EventName) ? d.EventName : (d.Purpose ?? ""),
+                    Item = d.Item ?? "",
+                    Qty = d.Qty,
+                    CreatedAt = d.CreatedAt.HasValue ? d.CreatedAt.Value.ToString("dd MMM yyyy") : "—",
+                    EventStartDate = d.EventStartDate ?? (d.IssueDate != default ? d.IssueDate : null),
+                    DepositDate = d.DepositDate ?? d.ExpectedReturnDate ?? DateTime.MinValue,
+                    ReceiverName = !string.IsNullOrWhiteSpace(d.ReceiverName) ? d.ReceiverName : (d.IssuedTo ?? ""),
+                    ReceiverNumber = !string.IsNullOrWhiteSpace(d.ReceiverNumber) ? d.ReceiverNumber : (d.PhoneNumber ?? ""),
+                    Status = d.Status ?? ""
+                }).ToList();
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<IssueRecordLine>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -141,10 +171,38 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<IssueRecordLine>();
         }
 
         public static async Task<IssueRecordHeader?> GetHeaderAsync(int id)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<StockPortal.Core.DTOs.Issues.IssueRecordHeaderDto>($"issues/{id}");
+            if (response.Success && response.Data != null)
+            {
+                var d = response.Data;
+                return new IssueRecordHeader
+                {
+                    Id = d.Id,
+                    IssueCode = d.IssueCode ?? "",
+                    EventName = !string.IsNullOrWhiteSpace(d.EventName) ? d.EventName : (d.Purpose ?? ""),
+                    EventStartDate = d.EventStartDate ?? (d.IssueDate != default ? d.IssueDate : null),
+                    EventEndDate = d.EventEndDate ?? d.ExpectedReturnDate,
+                    DepositDate = d.DepositDate != default ? d.DepositDate : (d.ExpectedReturnDate ?? DateTime.MinValue),
+                    VenueAddress = d.VenueAddress,
+                    ReceiverName = !string.IsNullOrWhiteSpace(d.ReceiverName) ? d.ReceiverName : (d.IssuedTo ?? ""),
+                    ReceiverNumber = !string.IsNullOrWhiteSpace(d.ReceiverNumber) ? d.ReceiverNumber : (d.PhoneNumber ?? ""),
+                    ReceiverPosition = d.ReceiverPosition ?? d.Designation,
+                    Remark = d.Remark ?? d.Remarks,
+                    Status = d.Status ?? "",
+                    DepositedOn = d.DepositedOn,
+                    CreatedAt = d.CreatedAt
+                };
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -203,11 +261,27 @@ namespace StockPortalApp.Data
             }
 
             return header;
+            */
+            return null;
         }
 
         /// <summary>Items for one issue record. Reuses DistributionItemRow since the shape (Category+Product+Qty) matches.</summary>
         public static async Task<List<DistributionItemRow>> GetItemsAsync(int issueRecordId)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<StockPortal.Core.DTOs.Issues.IssueItemRowDto>>($"issues/{issueRecordId}/items");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data.Select(d => new DistributionItemRow(new List<Product>())
+                {
+                    Category = d.Category,
+                    ProductName = d.ProductName ?? "",
+                    Qty = d.Qty.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                }).ToList();
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<DistributionItemRow>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -229,6 +303,8 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<DistributionItemRow>();
         }
 
         /// <summary>Inserts (id == null) or updates the header. Returns (Id, IssueCode).</summary>
@@ -306,6 +382,18 @@ namespace StockPortalApp.Data
         /// <summary>Items for the Mark Deposited popup: id + name + issued qty.</summary>
         public static async Task<List<DepositItemEntry>> GetItemsForDepositAsync(int issueRecordId)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<StockPortal.Core.DTOs.Issues.IssueItemRowDto>>($"issues/{issueRecordId}/items");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data.Select(d => new DepositItemEntry
+                {
+                    Id = d.Id,
+                    ProductName = d.ProductName ?? "",
+                    IssuedQty = d.Qty
+                }).ToList();
+            }
+
             var list = new List<DepositItemEntry>();
 
             using var conn = new SqlConnection(ConnectionString);

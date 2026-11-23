@@ -1,5 +1,7 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.Distributions;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -17,6 +19,27 @@ namespace StockPortalApp.Data
 
         public static async Task<List<DistributionSummary>> GetDistributionsAsync()
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<DistributionSummaryDto>>("distributions");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data.Select(d => new DistributionSummary
+                {
+                    Id = d.Id,
+                    ShipmentId = d.ShipmentId,
+                    Destination = d.Destination,
+                    DistributionDate = d.DistributionDate != default ? d.DistributionDate : d.Date,
+                    ReceiverName = d.ReceiverName,
+                    ReceiverNumber = d.ReceiverNumber,
+                    Position = d.Position,
+                    Remark = d.Remark,
+                    ItemsList = d.ItemsList ?? "",
+                    TotalQty = d.TotalQty
+                }).ToList();
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<DistributionSummary>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -43,10 +66,26 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<DistributionSummary>();
         }
 
         public static async Task<List<DistributionItemRow>> GetItemsAsync(int distributionId)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<DistributionItemRowDto>>($"distributions/{distributionId}/items");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data.Select(d => new DistributionItemRow(new List<Product>())
+                {
+                    Category = d.Category,
+                    ProductName = d.ProductName,
+                    Qty = d.Qty.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                }).ToList();
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<DistributionItemRow>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -71,21 +110,31 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<DistributionItemRow>();
         }
 
-        /// <summary>Inserts (id == null) or updates a distribution header. Returns (Id, ShipmentId).</summary>
-        public static async Task<(int Id, string ShipmentId)> SaveHeaderAsync(
-            int? id, string destination, DateTime distributionDate,
-            string? receiverName, string? receiverNumber, string? position, string? remark)
+        public static async Task<(int Id, string ShipmentId)> SaveDistributionAsync(SaveDistributionDto dto)
         {
-            if (id.HasValue)
+            var response = await ApiClient.PostAsync<SaveDistributionResultDto>("distributions", dto);
+            if (response.Success && response.Data != null)
             {
-                await UpdateHeaderAsync(id.Value, destination, distributionDate, receiverName, receiverNumber, position, remark);
-                return (id.Value, "");
+                return (response.Data.Id, response.Data.ShipmentId);
             }
+            throw new Exception(response.Message ?? "Failed to save distribution via API.");
+        }
 
+        public static async Task<(int Id, string ShipmentId)> SaveHeaderAsync(
+            int? id, string destination, DateTime distributionDate, string? receiverName, string? receiverNumber, string? position, string? remark)
+        {
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
+
+            if (id.HasValue && id.Value > 0)
+            {
+                await UpdateDistributionHeaderAsync(id.Value, destination, distributionDate, receiverName, receiverNumber, position, remark);
+                return (id.Value, string.Empty);
+            }
 
             using var cmd = new SqlCommand("dbo.sp_AddDistribution", conn) { CommandType = CommandType.StoredProcedure };
             cmd.Parameters.AddWithValue("@Destination", destination);
@@ -100,9 +149,26 @@ namespace StockPortalApp.Data
             return (reader.GetInt32(reader.GetOrdinal("Id")), reader.GetString(reader.GetOrdinal("ShipmentId")));
         }
 
-        private static async Task UpdateHeaderAsync(
-            int id, string destination, DateTime distributionDate,
-            string? receiverName, string? receiverNumber, string? position, string? remark)
+        public static async Task AddItemAsync(int distributionId, string? category, string productName, decimal qty)
+        {
+            await AddDistributionItemAsync(distributionId, category, productName, qty);
+        }
+
+        public static async Task AddDistributionItemAsync(int distributionId, string? category, string productName, decimal qty)
+        {
+            using var conn = new SqlConnection(ConnectionString);
+            await conn.OpenAsync();
+
+            using var cmd = new SqlCommand("dbo.sp_AddDistributionItem", conn) { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@DistributionId", distributionId);
+            cmd.Parameters.AddWithValue("@Category", (object?)category ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@ProductName", productName);
+            cmd.Parameters.AddWithValue("@Qty", qty);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public static async Task UpdateDistributionHeaderAsync(
+            int id, string destination, DateTime distributionDate, string? receiverName, string? receiverNumber, string? position, string? remark)
         {
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
@@ -120,6 +186,11 @@ namespace StockPortalApp.Data
 
         public static async Task ClearItemsAsync(int distributionId)
         {
+            await ClearDistributionItemsAsync(distributionId);
+        }
+
+        public static async Task ClearDistributionItemsAsync(int distributionId)
+        {
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -128,17 +199,18 @@ namespace StockPortalApp.Data
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public static async Task AddItemAsync(int distributionId, string? category, string productName, decimal qty)
+        public static async Task DeleteDistributionAsync(int id)
         {
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
-            using var cmd = new SqlCommand("dbo.sp_AddDistributionItem", conn) { CommandType = CommandType.StoredProcedure };
-            cmd.Parameters.AddWithValue("@DistributionId", distributionId);
-            cmd.Parameters.AddWithValue("@Category", (object?)category ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@ProductName", productName);
-            cmd.Parameters.AddWithValue("@Qty", qty);
-            await cmd.ExecuteNonQueryAsync();
+            using var cmd1 = new SqlCommand("DELETE FROM dbo.DistributionItems WHERE DistributionId = @Id", conn);
+            cmd1.Parameters.AddWithValue("@Id", id);
+            await cmd1.ExecuteNonQueryAsync();
+
+            using var cmd2 = new SqlCommand("DELETE FROM dbo.Distributions WHERE Id = @Id", conn);
+            cmd2.Parameters.AddWithValue("@Id", id);
+            await cmd2.ExecuteNonQueryAsync();
         }
     }
 }

@@ -18,6 +18,10 @@ namespace StockPortalApp.Models
         private string _price = "";
         private decimal _gstPercent = 0;
 
+        public PurchaseOrderItemRow() : this(new List<Product>())
+        {
+        }
+
         public PurchaseOrderItemRow(List<Product> allProducts)
         {
             _allProducts = allProducts;

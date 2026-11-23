@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.GoodsReturn;
 
 namespace StockPortalApp.Data
 {
@@ -22,6 +25,45 @@ namespace StockPortalApp.Data
             DateTime? dateTo = null,
             string? searchQuery = null)
         {
+            // API Call
+            var qParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(vendorName)) qParams.Add($"vendor={Uri.EscapeDataString(vendorName)}");
+            if (!string.IsNullOrWhiteSpace(category)) qParams.Add($"category={Uri.EscapeDataString(category)}");
+            if (!string.IsNullOrWhiteSpace(productName)) qParams.Add($"productName={Uri.EscapeDataString(productName)}");
+            if (!string.IsNullOrWhiteSpace(reason)) qParams.Add($"reason={Uri.EscapeDataString(reason)}");
+            if (dateFrom.HasValue) qParams.Add($"dateFrom={dateFrom.Value:yyyy-MM-dd}");
+            if (dateTo.HasValue) qParams.Add($"dateTo={dateTo.Value:yyyy-MM-dd}");
+            if (!string.IsNullOrWhiteSpace(searchQuery)) qParams.Add($"searchQuery={Uri.EscapeDataString(searchQuery.Trim())}");
+            var url = "goods-returns" + (qParams.Count > 0 ? "?" + string.Join("&", qParams) : "");
+
+            var response = await ApiClient.GetAsync<List<GoodsReturnDto>>(url);
+            if (response.Success && response.Data != null)
+            {
+                return response.Data.Select(dto => new GoodsReturn
+                {
+                    Id = dto.Id,
+                    ReturnNo = dto.ReturnNo,
+                    ReturnDate = dto.ReturnDate,
+                    VendorName = dto.VendorName,
+                    PurchaseId = dto.PurchaseId,
+                    AgainstPurchaseRef = dto.AgainstPurchaseRef ?? "",
+                    PurchaseDate = dto.PurchaseDate,
+                    PoReference = dto.PoReference,
+                    Reason = dto.Reason,
+                    TotalAmount = dto.TotalAmount,
+                    TotalQty = dto.TotalQty,
+                    ItemsSummary = dto.ItemsSummary ?? "",
+                    CategoriesList = dto.CategoriesList ?? "",
+                    ProductsList = dto.ProductsList ?? "",
+                    HandedOverTo = dto.HandedOverTo,
+                    ContactNumber = dto.ContactNumber,
+                    Remarks = dto.Remarks,
+                    CreatedAt = dto.CreatedAt
+                }).ToList();
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<GoodsReturn>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -65,10 +107,58 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<GoodsReturn>();
         }
 
         public static async Task<(GoodsReturn? Header, List<GoodsReturnItem> Items)> GetGoodsReturnDetailsAsync(int goodsReturnId)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<GoodsReturnDto>($"goods-returns/{goodsReturnId}");
+            if (response.Success && response.Data != null)
+            {
+                var dto = response.Data;
+                var header = new GoodsReturn
+                {
+                    Id = dto.Id,
+                    ReturnNo = dto.ReturnNo,
+                    ReturnDate = dto.ReturnDate,
+                    VendorName = dto.VendorName,
+                    PurchaseId = dto.PurchaseId,
+                    AgainstPurchaseRef = dto.AgainstPurchaseRef ?? dto.InvoiceOrChallan ?? "",
+                    PurchaseDate = dto.PurchaseDate,
+                    PoReference = dto.PoReference,
+                    Reason = dto.Reason,
+                    TotalAmount = dto.TotalAmount,
+                    TotalQty = dto.TotalQty,
+                    HandedOverTo = dto.HandedOverTo,
+                    ContactNumber = dto.ContactNumber,
+                    Remarks = dto.Remarks,
+                    VendorGst = dto.VendorGst,
+                    VendorAddress = dto.VendorAddress,
+                    VendorContactPerson = dto.VendorContactPerson,
+                    VendorContactNumber = dto.VendorContactNumber
+                };
+                var items = dto.Items != null
+                    ? dto.Items.Select(i => new GoodsReturnItem
+                    {
+                        Id = i.Id,
+                        GoodsReturnId = i.GoodsReturnId,
+                        PurchaseItemId = i.PurchaseItemId,
+                        Category = i.Category,
+                        ProductName = i.ProductName,
+                        ReturnQty = i.ReturnQty,
+                        Rate = i.Rate > 0 ? i.Rate : i.UnitPrice,
+                        GstPercent = i.GstPercent,
+                        Amount = i.Amount > 0 ? i.Amount : i.TotalPrice,
+                        SerialNumber = i.SerialNumber
+                    }).ToList()
+                    : new List<GoodsReturnItem>();
+                return (header, items);
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -127,10 +217,21 @@ namespace StockPortalApp.Data
             }
 
             return (header, items);
+            */
+            return (null, new List<GoodsReturnItem>());
         }
 
         public static async Task<List<ReturnablePurchaseOption>> GetVendorPurchasesForReturnAsync(string vendorName)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<ReturnablePurchaseOption>>($"goods-returns/vendor-purchases?vendorName={Uri.EscapeDataString(vendorName)}");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<ReturnablePurchaseOption>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -159,10 +260,21 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<ReturnablePurchaseOption>();
         }
 
         public static async Task<List<ReturnablePurchaseItemRow>> GetPurchaseItemsForReturnAsync(int purchaseId)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<ReturnablePurchaseItemRow>>($"goods-returns/purchases/{purchaseId}/items");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<ReturnablePurchaseItemRow>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -191,6 +303,8 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<ReturnablePurchaseItemRow>();
         }
 
         public static async Task<(int Id, string ReturnNo)> SaveGoodsReturnAsync(
@@ -205,6 +319,46 @@ namespace StockPortalApp.Data
             string? remarks,
             IEnumerable<ReturnablePurchaseItemRow> items)
         {
+            // API Call
+            var dto = new
+            {
+                ReturnDate = returnDate,
+                VendorName = vendorName,
+                PurchaseId = purchaseId,
+                InvoiceOrChallan = purchaseRef,
+                Reason = reason,
+                TotalAmount = totalAmount,
+                Remarks = remarks,
+                Items = items.Where(i => i.ReturnQty > 0).Select(i => new
+                {
+                    ProductName = i.ProductName,
+                    Category = i.Category,
+                    ReturnQty = i.ReturnQty,
+                    UnitPrice = i.Rate,
+                    GstPercent = i.GstPercent,
+                    TotalPrice = i.Rate * i.ReturnQty * (1 + (i.GstPercent / 100m)),
+                    SerialNumber = i.SerialNumber
+                }).ToList()
+            };
+
+            var response = await ApiClient.PostAsync<Dictionary<string, object>>("goods-returns", dto);
+            if (response.Success && response.Data != null)
+            {
+                int id = 0;
+                string no = string.Empty;
+                if (response.Data.TryGetValue("id", out var idVal) || response.Data.TryGetValue("Id", out idVal))
+                {
+                    int.TryParse(idVal?.ToString(), out id);
+                }
+                if (response.Data.TryGetValue("returnNo", out var noVal) || response.Data.TryGetValue("ReturnNo", out noVal))
+                {
+                    no = noVal?.ToString() ?? string.Empty;
+                }
+                return (id, no);
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -263,6 +417,8 @@ namespace StockPortalApp.Data
                 await tx.RollbackAsync();
                 throw;
             }
+            */
+            return (0, string.Empty);
         }
     }
 }

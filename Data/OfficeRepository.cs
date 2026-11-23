@@ -1,5 +1,7 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.Distributions;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -17,6 +19,15 @@ namespace StockPortalApp.Data
 
         public static async Task<List<DistributionOffice>> GetOfficesAsync()
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<DistributionOffice>>("distributions/offices");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<DistributionOffice>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -38,10 +49,28 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<DistributionOffice>();
         }
 
         public static async Task<DistributionOffice> AddOfficeAsync(string name, string? address, string? contactPerson, string? contactNumber)
         {
+            // API Call
+            var dto = new DistributionOfficeDto
+            {
+                Name = name,
+                Address = address,
+                ContactPerson = contactPerson,
+                ContactNumber = contactNumber
+            };
+            var response = await ApiClient.PostAsync<DistributionOffice>("distributions/offices", dto);
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -58,6 +87,8 @@ namespace StockPortalApp.Data
                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                 Name = reader.GetString(reader.GetOrdinal("Name")),
             };
+            */
+            return new DistributionOffice { Name = name };
         }
     }
 }

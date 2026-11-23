@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -17,6 +18,31 @@ namespace StockPortalApp.Data
 
         public static async Task<List<StockReportItem>> GetReportAsync(DateTime? dateFrom, DateTime? dateTo)
         {
+            // API Call
+            var query = "reports/stock-summary";
+            var qParams = new List<string>();
+            if (dateFrom.HasValue) qParams.Add($"dateFrom={dateFrom.Value:yyyy-MM-dd}");
+            if (dateTo.HasValue) qParams.Add($"dateTo={dateTo.Value:yyyy-MM-dd}");
+            if (qParams.Count > 0) query += "?" + string.Join("&", qParams);
+
+            var response = await ApiClient.GetAsync<List<StockReportItem>>(query);
+
+            if (!response.Success)
+            {
+                throw new InvalidOperationException(
+                    $"Stock summary API request failed for '{query}'.");
+            }
+
+            if (response.Data is null)
+            {
+                throw new InvalidOperationException(
+                    "Stock summary API reported success but returned no Data.");
+            }
+
+            return response.Data;
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<StockReportItem>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -83,11 +109,22 @@ namespace StockPortalApp.Data
             catch { }
 
             return list;
+            */
+            // return new List<StockReportItem>();
         }
 
         /// <summary>Full movement history for one product across every source: batches, purchases, dispatches, damage, distributions.</summary>
         public static async Task<List<LedgerEntry>> GetProductLedgerAsync(string productName)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<LedgerEntry>>($"reports/product-ledger?productName={Uri.EscapeDataString(productName)}");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<LedgerEntry>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -138,6 +175,8 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<LedgerEntry>();
         }
     }
 }

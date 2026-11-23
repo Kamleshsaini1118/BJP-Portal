@@ -1,5 +1,7 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.PurchaseOrders;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -18,6 +20,22 @@ namespace StockPortalApp.Data
         public static async Task<List<PurchaseOrder>> GetOrdersAsync(
             string? vendorName, string? productName, DateTime? dateFrom, DateTime? dateTo)
         {
+            // API Call
+            var qParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(vendorName)) qParams.Add($"vendor={Uri.EscapeDataString(vendorName)}");
+            if (!string.IsNullOrWhiteSpace(productName)) qParams.Add($"product={Uri.EscapeDataString(productName)}");
+            if (dateFrom.HasValue) qParams.Add($"dateFrom={dateFrom.Value:yyyy-MM-dd}");
+            if (dateTo.HasValue) qParams.Add($"dateTo={dateTo.Value:yyyy-MM-dd}");
+            var url = "purchase-orders" + (qParams.Count > 0 ? "?" + string.Join("&", qParams) : "");
+
+            var response = await ApiClient.GetAsync<List<PurchaseOrder>>(url);
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<PurchaseOrder>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -45,10 +63,28 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<PurchaseOrder>();
         }
 
         public static async Task<List<PurchaseOrderItemRow>> GetItemsAsync(int purchaseOrderId)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<PurchaseOrderItemDisplayDto>>($"purchase-orders/{purchaseOrderId}/items");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data.Select(d => new PurchaseOrderItemRow(new List<Product>())
+                {
+                    Category = d.Category,
+                    ProductName = d.ProductName,
+                    Qty = d.Qty.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    Price = d.Price.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    GstPercent = d.GstPercent
+                }).ToList();
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<PurchaseOrderItemRow>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -71,8 +107,50 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<PurchaseOrderItemRow>();
         }
 
+        public static async Task<(int Id, string PoReference)> SaveOrderAsync(
+            int? id, string vendorName, DateTime? delivery, string? remarks, List<PurchaseOrderItemRow> items)
+        {
+            var dto = new
+            {
+                Id = id,
+                VendorName = vendorName,
+                Delivery = delivery,
+                Remarks = remarks,
+                Items = items.Select(r => new
+                {
+                    Category = r.Category,
+                    ProductName = r.ProductName,
+                    Qty = decimal.TryParse(r.Qty, out var q) ? q : 0,
+                    Price = decimal.TryParse(r.Price, out var p) ? p : 0,
+                    GstPercent = r.GstPercent
+                }).ToList()
+            };
+
+            var response = await ApiClient.PostAsync<Dictionary<string, object>>("purchase-orders", dto);
+            if (response.Success && response.Data != null)
+            {
+                int poId = 0;
+                string poRef = string.Empty;
+                if (response.Data.TryGetValue("id", out var idVal) || response.Data.TryGetValue("Id", out idVal))
+                {
+                    int.TryParse(idVal?.ToString(), out poId);
+                }
+                if (response.Data.TryGetValue("poReference", out var refVal) || response.Data.TryGetValue("PoReference", out refVal))
+                {
+                    poRef = refVal?.ToString() ?? string.Empty;
+                }
+                return (poId, poRef);
+            }
+
+            throw new InvalidOperationException(response.Message ?? "Failed to save purchase order.");
+        }
+
+        /*
+        // --- DIRECT SQL CODE (COMMENTED) ---
         /// <summary>Inserts (id == null) or updates a PO header. Returns (Id, PoReference).</summary>
         public static async Task<(int Id, string PoReference)> SaveHeaderAsync(
             int? id, string vendorName, DateTime? delivery, string? remarks)
@@ -101,8 +179,7 @@ namespace StockPortalApp.Data
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public static async Task AddItemAsync(
-            int purchaseOrderId, string? category, string productName, decimal qty, decimal price, decimal gstPercent)
+        public static async Task AddItemAsync(int purchaseOrderId, string? category, string productName, decimal qty, decimal price, decimal gstPercent)
         {
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
@@ -116,5 +193,6 @@ namespace StockPortalApp.Data
             cmd.Parameters.AddWithValue("@GstPercent", gstPercent);
             await cmd.ExecuteNonQueryAsync();
         }
+        */
     }
 }

@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using StockPortalApp.Data;
+using StockPortalApp.Services;
 
 namespace StockPortalApp
 {
@@ -180,7 +181,7 @@ namespace StockPortalApp
                 SignInButton.IsEnabled = false;
                 SignInButton.Content = "Signing in…";
 
-                var result = await DbHelper.ValidateLoginAsync(id, password);
+                var result = await ApiClient.LoginAsync(id, password);
 
                 SignInButton.IsEnabled = true;
                 SignInButton.Content = "Sign In";

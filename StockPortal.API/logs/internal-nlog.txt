@@ -1,0 +1,268 @@
+2026-11-16 15:40:50.9167 Info Message Template Auto Format enabled
+2026-11-16 15:40:50.9314 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-16 15:40:50.9916 Info Adding target FileTarget(Name=allfile)
+2026-11-16 15:40:51.1750 Info Adding target FileTarget(Name=errorfile)
+2026-11-16 15:40:51.1750 Info Adding target FileTarget(Name=auditfile)
+2026-11-16 15:40:51.1928 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-16 15:40:51.1928 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-16 15:40:51.2418 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=E:\load InfoTech\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-16 16:19:38.3430 Info Shutdown() called. Logger closing...
+2026-11-16 16:19:38.8305 Info Closing old configuration.
+2026-11-16 16:19:41.3002 Info Logger has been closed down.
+2026-11-16 16:19:55.1414 Info AppDomain Shutting down. Logger closing...
+2026-11-16 16:19:55.5498 Info Logger has been shut down.
+2026-11-16 16:23:08.7677 Info Message Template Auto Format enabled
+2026-11-16 16:23:08.8161 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-16 16:23:08.8701 Info Adding target FileTarget(Name=allfile)
+2026-11-16 16:23:08.9015 Info Adding target FileTarget(Name=errorfile)
+2026-11-16 16:23:08.9015 Info Adding target FileTarget(Name=auditfile)
+2026-11-16 16:23:08.9015 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-16 16:23:08.9015 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-16 16:23:09.0673 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=E:\load InfoTech\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-16 16:32:10.9729 Info Shutdown() called. Logger closing...
+2026-11-16 16:32:10.9970 Info Closing old configuration.
+2026-11-16 16:32:12.7903 Info Logger has been closed down.
+2026-11-16 16:32:16.9509 Info AppDomain Shutting down. Logger closing...
+2026-11-16 16:32:17.0236 Info Logger has been shut down.
+2026-11-16 17:53:03.2097 Info Message Template Auto Format enabled
+2026-11-16 17:53:03.3410 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-16 17:53:03.3971 Info Adding target FileTarget(Name=allfile)
+2026-11-16 17:53:03.3971 Info Adding target FileTarget(Name=errorfile)
+2026-11-16 17:53:03.3971 Info Adding target FileTarget(Name=auditfile)
+2026-11-16 17:53:03.4094 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-16 17:53:03.4094 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-16 17:53:03.7392 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=E:\load InfoTech\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-17 10:53:29.1377 Info Message Template Auto Format enabled
+2026-11-17 10:53:29.3601 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-17 10:53:29.9798 Info Adding target FileTarget(Name=allfile)
+2026-11-17 10:53:30.0603 Info Adding target FileTarget(Name=errorfile)
+2026-11-17 10:53:30.0912 Info Adding target FileTarget(Name=auditfile)
+2026-11-17 10:53:30.0912 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-17 10:53:30.1105 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-17 10:53:30.3400 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=E:\load InfoTech\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-17 11:56:19.5224 Info Shutdown() called. Logger closing...
+2026-11-17 11:56:20.5336 Info Closing old configuration.
+2026-11-17 11:56:23.6630 Info Logger has been closed down.
+2026-11-17 11:56:59.2640 Info AppDomain Shutting down. Logger closing...
+2026-11-17 11:57:00.2218 Info Logger has been shut down.
+2026-11-17 13:56:32.0952 Info Message Template Auto Format enabled
+2026-11-17 13:56:32.2037 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-17 13:56:32.6239 Info Adding target FileTarget(Name=allfile)
+2026-11-17 13:56:32.6926 Info Adding target FileTarget(Name=errorfile)
+2026-11-17 13:56:32.7440 Info Adding target FileTarget(Name=auditfile)
+2026-11-17 13:56:32.7738 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-17 13:56:32.8150 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-17 13:56:33.0284 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=E:\load InfoTech\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-17 15:35:21.2894 Info Message Template Auto Format enabled
+2026-11-17 15:35:21.3044 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-17 15:35:21.3793 Info Adding target FileTarget(Name=allfile)
+2026-11-17 15:35:21.3793 Info Adding target FileTarget(Name=errorfile)
+2026-11-17 15:35:21.3947 Info Adding target FileTarget(Name=auditfile)
+2026-11-17 15:35:21.3947 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-17 15:35:21.3947 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-17 15:35:21.4475 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-18 10:35:10.3783 Info Message Template Auto Format enabled
+2026-11-18 10:35:10.3984 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-18 10:35:10.4788 Info Adding target FileTarget(Name=allfile)
+2026-11-18 10:35:10.4933 Info Adding target FileTarget(Name=errorfile)
+2026-11-18 10:35:10.4933 Info Adding target FileTarget(Name=auditfile)
+2026-11-18 10:35:10.4933 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-18 10:35:10.4933 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-18 10:35:10.5672 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-18 11:30:20.0710 Info Message Template Auto Format enabled
+2026-11-18 11:30:20.0874 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-18 11:30:20.1969 Info Adding target FileTarget(Name=allfile)
+2026-11-18 11:30:20.2066 Info Adding target FileTarget(Name=errorfile)
+2026-11-18 11:30:20.2066 Info Adding target FileTarget(Name=auditfile)
+2026-11-18 11:30:20.2066 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-18 11:30:20.2066 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-18 11:30:20.2794 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-18 11:51:29.6909 Info Shutdown() called. Logger closing...
+2026-11-18 11:51:29.7133 Info Closing old configuration.
+2026-11-18 11:51:29.7998 Info Logger has been closed down.
+2026-11-18 11:51:30.2757 Info AppDomain Shutting down. Logger closing...
+2026-11-18 11:51:30.2757 Info Logger has been shut down.
+2026-11-18 11:52:53.1208 Info Message Template Auto Format enabled
+2026-11-18 11:52:53.1495 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-18 11:52:53.2348 Info Adding target FileTarget(Name=allfile)
+2026-11-18 11:52:53.2629 Info Adding target FileTarget(Name=errorfile)
+2026-11-18 11:52:53.2629 Info Adding target FileTarget(Name=auditfile)
+2026-11-18 11:52:53.2629 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-18 11:52:53.2697 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-18 11:52:53.3763 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-18 12:00:29.2227 Info Shutdown() called. Logger closing...
+2026-11-18 12:00:29.2227 Info Closing old configuration.
+2026-11-18 12:00:29.2426 Info Logger has been closed down.
+2026-11-18 12:00:29.5629 Info AppDomain Shutting down. Logger closing...
+2026-11-18 12:00:29.5735 Info Logger has been shut down.
+2026-11-18 12:02:23.8520 Info Message Template Auto Format enabled
+2026-11-18 12:02:23.8729 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-18 12:02:24.0240 Info Adding target FileTarget(Name=allfile)
+2026-11-18 12:02:24.0350 Info Adding target FileTarget(Name=errorfile)
+2026-11-18 12:02:24.0350 Info Adding target FileTarget(Name=auditfile)
+2026-11-18 12:02:24.0350 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-18 12:02:24.0498 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-18 12:02:24.1238 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-18 12:05:10.6929 Info Message Template Auto Format enabled
+2026-11-18 12:05:10.7134 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-18 12:05:10.8125 Info Adding target FileTarget(Name=allfile)
+2026-11-18 12:05:10.8260 Info Adding target FileTarget(Name=errorfile)
+2026-11-18 12:05:10.8260 Info Adding target FileTarget(Name=auditfile)
+2026-11-18 12:05:10.8320 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-18 12:05:10.8320 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-18 12:05:10.8974 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-18 12:46:29.5014 Info Shutdown() called. Logger closing...
+2026-11-18 12:46:29.5097 Info Closing old configuration.
+2026-11-18 12:46:29.5209 Info Logger has been closed down.
+2026-11-18 12:46:29.6825 Info AppDomain Shutting down. Logger closing...
+2026-11-18 12:46:29.6825 Info Logger has been shut down.
+2026-11-18 13:52:37.1664 Info Message Template Auto Format enabled
+2026-11-18 13:52:37.1860 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-18 13:52:37.2733 Info Adding target FileTarget(Name=allfile)
+2026-11-18 13:52:37.2733 Info Adding target FileTarget(Name=errorfile)
+2026-11-18 13:52:37.2878 Info Adding target FileTarget(Name=auditfile)
+2026-11-18 13:52:37.2878 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-18 13:52:37.2878 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-18 13:52:37.3461 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-18 14:04:34.2150 Info Shutdown() called. Logger closing...
+2026-11-18 14:04:34.2329 Info Closing old configuration.
+2026-11-18 14:04:34.3290 Info Logger has been closed down.
+2026-11-18 14:04:34.8672 Info AppDomain Shutting down. Logger closing...
+2026-11-18 14:04:34.8672 Info Logger has been shut down.
+2026-11-18 14:05:02.5872 Info Message Template Auto Format enabled
+2026-11-18 14:05:02.6028 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-18 14:05:02.6703 Info Adding target FileTarget(Name=allfile)
+2026-11-18 14:05:02.6779 Info Adding target FileTarget(Name=errorfile)
+2026-11-18 14:05:02.6779 Info Adding target FileTarget(Name=auditfile)
+2026-11-18 14:05:02.6779 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-18 14:05:02.6779 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-18 14:05:02.7310 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-18 15:36:07.5000 Info Message Template Auto Format enabled
+2026-11-18 15:36:07.6641 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-18 15:36:07.7643 Info Adding target FileTarget(Name=allfile)
+2026-11-18 15:36:07.7902 Info Adding target FileTarget(Name=errorfile)
+2026-11-18 15:36:07.7902 Info Adding target FileTarget(Name=auditfile)
+2026-11-18 15:36:07.7902 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-18 15:36:07.7902 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-18 15:36:07.9409 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-19 10:12:57.9567 Info Message Template Auto Format enabled
+2026-11-19 10:12:57.9798 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-19 10:12:58.0706 Info Adding target FileTarget(Name=allfile)
+2026-11-19 10:12:58.0891 Info Adding target FileTarget(Name=errorfile)
+2026-11-19 10:12:58.0891 Info Adding target FileTarget(Name=auditfile)
+2026-11-19 10:12:58.0982 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-19 10:12:58.0982 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-19 10:12:58.1690 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-19 10:49:56.4542 Info Message Template Auto Format enabled
+2026-11-19 10:49:56.4723 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-19 10:49:56.5507 Info Adding target FileTarget(Name=allfile)
+2026-11-19 10:49:56.5507 Info Adding target FileTarget(Name=errorfile)
+2026-11-19 10:49:56.5507 Info Adding target FileTarget(Name=auditfile)
+2026-11-19 10:49:56.5666 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-19 10:49:56.5666 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-19 10:49:56.6194 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-19 11:29:25.5129 Info Shutdown() called. Logger closing...
+2026-11-19 11:29:25.5238 Info Closing old configuration.
+2026-11-19 11:29:25.5679 Info Logger has been closed down.
+2026-11-19 11:29:25.9370 Info AppDomain Shutting down. Logger closing...
+2026-11-19 11:29:25.9639 Info Logger has been shut down.
+2026-11-19 11:37:41.6162 Info Message Template Auto Format enabled
+2026-11-19 11:37:41.6405 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-19 11:37:41.7466 Info Adding target FileTarget(Name=allfile)
+2026-11-19 11:37:41.7662 Info Adding target FileTarget(Name=errorfile)
+2026-11-19 11:37:41.7707 Info Adding target FileTarget(Name=auditfile)
+2026-11-19 11:37:41.7707 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-19 11:37:41.7707 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-19 11:37:41.8396 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-19 11:50:49.9464 Info Message Template Auto Format enabled
+2026-11-19 11:50:49.9646 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-19 11:50:50.0398 Info Adding target FileTarget(Name=allfile)
+2026-11-19 11:50:50.0494 Info Adding target FileTarget(Name=errorfile)
+2026-11-19 11:50:50.0494 Info Adding target FileTarget(Name=auditfile)
+2026-11-19 11:50:50.0494 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-19 11:50:50.0494 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-19 11:50:50.1087 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-19 14:20:07.1624 Info Message Template Auto Format enabled
+2026-11-19 14:20:07.2311 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-19 14:20:07.4949 Info Adding target FileTarget(Name=allfile)
+2026-11-19 14:20:07.5268 Info Adding target FileTarget(Name=errorfile)
+2026-11-19 14:20:07.5420 Info Adding target FileTarget(Name=auditfile)
+2026-11-19 14:20:07.5420 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-19 14:20:07.5574 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-19 14:20:07.6919 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-19 15:02:12.9774 Info Message Template Auto Format enabled
+2026-11-19 15:02:13.0269 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-19 15:02:13.0999 Info Adding target FileTarget(Name=allfile)
+2026-11-19 15:02:13.1151 Info Adding target FileTarget(Name=errorfile)
+2026-11-19 15:02:13.1151 Info Adding target FileTarget(Name=auditfile)
+2026-11-19 15:02:13.1151 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-19 15:02:13.1269 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-19 15:02:13.1724 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-20 10:33:24.4910 Info Message Template Auto Format enabled
+2026-11-20 10:33:24.5082 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-20 10:33:24.5810 Info Adding target FileTarget(Name=allfile)
+2026-11-20 10:33:24.5947 Info Adding target FileTarget(Name=errorfile)
+2026-11-20 10:33:24.5947 Info Adding target FileTarget(Name=auditfile)
+2026-11-20 10:33:24.5947 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-20 10:33:24.6036 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-20 10:33:24.6427 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-20 12:25:28.7436 Info Shutdown() called. Logger closing...
+2026-11-20 12:25:28.7504 Info Closing old configuration.
+2026-11-20 12:25:28.8897 Info Logger has been closed down.
+2026-11-20 12:25:29.3659 Info AppDomain Shutting down. Logger closing...
+2026-11-20 12:25:29.3659 Info Logger has been shut down.
+2026-11-20 12:26:05.0238 Info Message Template Auto Format enabled
+2026-11-20 12:26:05.0426 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-20 12:26:05.1000 Info Adding target FileTarget(Name=allfile)
+2026-11-20 12:26:05.1102 Info Adding target FileTarget(Name=errorfile)
+2026-11-20 12:26:05.1102 Info Adding target FileTarget(Name=auditfile)
+2026-11-20 12:26:05.1102 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-20 12:26:05.1102 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-20 12:26:05.1552 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-20 14:15:13.9868 Info Shutdown() called. Logger closing...
+2026-11-20 14:15:13.9868 Info Closing old configuration.
+2026-11-20 14:15:13.9868 Info Logger has been closed down.
+2026-11-20 14:15:14.1023 Info AppDomain Shutting down. Logger closing...
+2026-11-20 14:15:14.1023 Info Logger has been shut down.
+2026-11-20 14:15:33.1777 Info Message Template Auto Format enabled
+2026-11-20 14:15:33.2002 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-20 14:15:33.2865 Info Adding target FileTarget(Name=allfile)
+2026-11-20 14:15:33.2865 Info Adding target FileTarget(Name=errorfile)
+2026-11-20 14:15:33.3007 Info Adding target FileTarget(Name=auditfile)
+2026-11-20 14:15:33.3007 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-20 14:15:33.3007 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-20 14:15:33.3432 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-20 14:47:38.1008 Info Shutdown() called. Logger closing...
+2026-11-20 14:47:38.1008 Info Closing old configuration.
+2026-11-20 14:47:38.1008 Info Logger has been closed down.
+2026-11-20 14:47:38.2185 Info AppDomain Shutting down. Logger closing...
+2026-11-20 14:47:38.2185 Info Logger has been shut down.
+2026-11-20 14:47:50.0871 Info Message Template Auto Format enabled
+2026-11-20 14:47:50.0989 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-20 14:47:50.1535 Info Adding target FileTarget(Name=allfile)
+2026-11-20 14:47:50.1617 Info Adding target FileTarget(Name=errorfile)
+2026-11-20 14:47:50.1617 Info Adding target FileTarget(Name=auditfile)
+2026-11-20 14:47:50.1617 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-20 14:47:50.1617 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-20 14:47:50.2032 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-20 16:15:03.9207 Info Shutdown() called. Logger closing...
+2026-11-20 16:15:04.0049 Info Closing old configuration.
+2026-11-20 16:15:04.0219 Info Logger has been closed down.
+2026-11-20 16:15:04.0363 Info AppDomain Shutting down. Logger closing...
+2026-11-20 16:15:04.0363 Info Logger has been shut down.
+2026-11-20 16:15:44.0231 Info Message Template Auto Format enabled
+2026-11-20 16:15:44.0394 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-20 16:15:44.1155 Info Adding target FileTarget(Name=allfile)
+2026-11-20 16:15:44.1269 Info Adding target FileTarget(Name=errorfile)
+2026-11-20 16:15:44.1269 Info Adding target FileTarget(Name=auditfile)
+2026-11-20 16:15:44.1269 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-20 16:15:44.1269 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-20 16:15:44.1800 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config
+2026-11-23 11:02:43.8602 Info Message Template Auto Format enabled
+2026-11-23 11:02:43.8602 Info Loading assembly: NLog.Web.AspNetCore
+2026-11-23 11:02:43.9274 Info Adding target FileTarget(Name=allfile)
+2026-11-23 11:02:43.9274 Info Adding target FileTarget(Name=errorfile)
+2026-11-23 11:02:43.9459 Info Adding target FileTarget(Name=auditfile)
+2026-11-23 11:02:43.9459 Warn Skipping unrecognized property 'tolower=true` for ${level} (NLog.LayoutRenderers.LevelLayoutRenderer)
+2026-11-23 11:02:43.9459 Info Adding target ConsoleTarget(Name=lifetimeConsole)
+2026-11-23 11:02:43.9872 Info Validating config: TargetNames=auditfile, lifetimeConsole, allfile, errorfile, ConfigItems=86, FilePath=D:\Desktop\StockPortalAppV1\StockPortal.API\bin\Debug\net5.0\nlog.config

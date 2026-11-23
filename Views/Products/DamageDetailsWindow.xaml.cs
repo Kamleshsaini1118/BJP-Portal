@@ -1,4 +1,5 @@
 using StockPortalApp.Models;
+using StockPortalApp.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,14 +21,48 @@ namespace StockPortalApp
     /// </summary>
     public partial class DamageDetailsWindow : Window
     {
-        private readonly DamageRecord _record;
+        private DamageRecord _record;
+        private readonly int _recordId;
 
-        public DamageDetailsWindow(DamageRecord record)
+        public DamageDetailsWindow(DamageRecord record) : this(record.Id, record)
+        {
+        }
+
+        public DamageDetailsWindow(int recordId, DamageRecord? fallbackRecord = null)
         {
             InitializeComponent();
-            _record = record;
-            SubtitleText.Text = $"{record.DamageCode} — {record.ItemName}";
+            _recordId = recordId;
+            _record = fallbackRecord ?? new DamageRecord { Id = recordId };
 
+            Loaded += DamageDetailsWindow_Loaded;
+            RenderRecord(_record);
+        }
+
+        private async void DamageDetailsWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (_recordId > 0)
+            {
+                try
+                {
+                    var freshRecord = await DamageRepository.GetRecordByIdAsync(_recordId);
+                    if (freshRecord != null)
+                    {
+                        _record = freshRecord;
+                        RenderRecord(_record);
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private void RenderRecord(DamageRecord record)
+        {
+            SubtitleText.Text = $"{record.DamageCode} — {record.ItemName}";
+            MetaPanel.Children.Clear();
+
+            AddRow("Category", record.CategoryDisplay);
+            AddRow("Item Name", record.ItemName);
+            AddRow("Damaged Qty", record.QtyDisplay);
             AddRow("Reportee Name", record.ReporteeName);
             AddRow("Reportee Number", record.ReporteeNumber);
             AddRow("Reportee Position", record.ReporteePosition);
@@ -63,7 +98,17 @@ namespace StockPortalApp
             }
             else if (imagePaths.Count > 0)
             {
+                PhotosItemsControl.ItemsSource = null;
+                PhotoPreviewPanel.Visibility = Visibility.Collapsed;
+                NoPhotosPanel.Visibility = Visibility.Visible;
                 NoPhotosText.Text = "Attached photo file(s) not found on disk.";
+            }
+            else
+            {
+                PhotosItemsControl.ItemsSource = null;
+                PhotoPreviewPanel.Visibility = Visibility.Collapsed;
+                NoPhotosPanel.Visibility = Visibility.Visible;
+                NoPhotosText.Text = "No photos were attached to this damage report.";
             }
         }
 

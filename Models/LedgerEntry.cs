@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Media;
 
@@ -11,10 +12,17 @@ namespace StockPortalApp.Models
     {
         public string Type { get; set; } = ""; // "Batch Added" or "Dispatched"
         public string BatchCode { get; set; } = "";
+
+        [JsonPropertyName("code")]
+        public string Code { get => BatchCode; set => BatchCode = value; }
+
         public string Item { get; set; } = "";
         public decimal Qty { get; set; }
         public string Party { get; set; } = "";
         public System.DateTime CreatedAt { get; set; }
+
+        [JsonPropertyName("moveDate")]
+        public DateTime MoveDate { get => CreatedAt; set => CreatedAt = value; }
 
         public string QtyDisplay => Qty.ToString("N0");
         public string CreatedAtDisplay => (CreatedAt == DateTime.MinValue || CreatedAt.Year <= 1900)

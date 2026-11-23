@@ -184,15 +184,8 @@ namespace StockPortalApp
             SubmitButton.IsEnabled = false;
             try
             {
-                var (id, _) = await PurchaseOrderRepository.SaveHeaderAsync(_editingPo?.Id, vendor, delivery, remarks);
-
-                await PurchaseOrderRepository.ClearItemsAsync(id);
-                foreach (var row in rowsData)
-                {
-                    var qty = decimal.Parse(row.Qty);
-                    var price = decimal.TryParse(row.Price, out var p) ? p : 0;
-                    await PurchaseOrderRepository.AddItemAsync(id, row.Category, row.ProductName, qty, price, row.GstPercent);
-                }
+                var (id, _) = await PurchaseOrderRepository.SaveOrderAsync(
+                    _editingPo?.Id, vendor, delivery, remarks, rowsData);
 
                 DialogResult = true;
                 Close();

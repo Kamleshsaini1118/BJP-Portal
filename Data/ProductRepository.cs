@@ -1,6 +1,8 @@
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Helpers;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.Products;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -16,7 +18,59 @@ namespace StockPortalApp.Data
         private static string ConnectionString =>
             ConfigurationManager.ConnectionStrings["StockPortalDb"].ConnectionString;
 
+        private static string FormatCreatedAt(object? val)
+        {
+            if (val == null) return "—";
+            if (val is System.Text.Json.JsonElement je)
+            {
+                if (je.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    var s = je.GetString();
+                    if (DateTime.TryParse(s, out var parsedDate)) return parsedDate.ToString("dd MMM yyyy");
+                    return string.IsNullOrWhiteSpace(s) ? "—" : s;
+                }
+                if (je.TryGetDateTime(out var dtVal))
+                {
+                    return dtVal.ToString("dd MMM yyyy");
+                }
+                return je.ToString();
+            }
+            if (val is DateTime dateVal) return dateVal.ToString("dd MMM yyyy");
+            var str = val.ToString()?.Trim() ?? "";
+            if (DateTime.TryParse(str, out var dtFromStr)) return dtFromStr.ToString("dd MMM yyyy");
+            return string.IsNullOrWhiteSpace(str) ? "—" : str;
+        }
+
         public static async Task<List<ProductCategory>> GetCategoriesAsync(string? searchQuery = null, string statusFilter = "ALL")
+        {
+            try
+            {
+                var query = $"products/categories?statusFilter={Uri.EscapeDataString(statusFilter)}";
+                if (!string.IsNullOrEmpty(searchQuery))
+                {
+                    query += $"&searchQuery={Uri.EscapeDataString(searchQuery)}";
+                }
+
+                var response = await ApiClient.GetAsync<List<ProductCategoryDto>>(query);
+                if (response.Success && response.Data != null && response.Data.Count > 0)
+                {
+                    return response.Data.Select(d => new ProductCategory
+                    {
+                        Id = d.Id,
+                        Name = d.Name,
+                        Prefix = d.Prefix,
+                        IsActive = d.IsActive ?? true,
+                        ProductCount = d.ProductCount ?? 0
+                    }).ToList();
+                }
+            }
+            catch { }
+
+            // Fallback to direct SQL
+            return await GetCategoriesDirectSqlAsync(searchQuery, statusFilter);
+        }
+
+        public static async Task<List<ProductCategory>> GetCategoriesDirectSqlAsync(string? searchQuery = null, string statusFilter = "ALL")
         {
             var list = new List<ProductCategory>();
 
@@ -59,11 +113,26 @@ namespace StockPortalApp.Data
         }
 
         /// <summary>
-        /// Adds a new category. Mirrors the HTML's generateCategoryPrefix(): first 3 letters
-        /// of the name, uppercased; if that prefix is already used, falls back to 2 letters + a number.
+        /// Adds a new category.
         /// </summary>
         public static async Task<ProductCategory> AddCategoryAsync(string name, IEnumerable<string> existingPrefixes, string? customPrefix = null, bool isActive = true)
         {
+            // API Call
+            var payload = new CreateCategoryDto
+            {
+                Name = name,
+                CustomPrefix = customPrefix,
+                IsActive = isActive
+            };
+
+            var response = await ApiClient.PostAsync<ProductCategory>("products/categories", payload);
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             string prefix;
             if (!string.IsNullOrWhiteSpace(customPrefix))
             {
@@ -109,10 +178,17 @@ namespace StockPortalApp.Data
                 Prefix = reader.GetString(prefixOrd),
                 IsActive = activeOrd >= 0 && !reader.IsDBNull(activeOrd) ? reader.GetBoolean(activeOrd) : isActive,
             };
+            */
+            return new ProductCategory { Name = name, Prefix = customPrefix ?? "CAT", IsActive = isActive };
         }
 
         public static async Task ToggleCategoryStatusAsync(int id, bool isActive)
         {
+            // API Call
+            await ApiClient.PatchAsync<bool>($"products/categories/{id}/status", new ToggleStatusDto { IsActive = isActive });
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -121,9 +197,40 @@ namespace StockPortalApp.Data
             cmd.Parameters.AddWithValue("@IsActive", isActive);
 
             await cmd.ExecuteNonQueryAsync();
+            */
         }
 
         public static async Task<List<Product>> GetProductsAsync()
+        {
+            try
+            {
+                // API Call
+                var response = await ApiClient.GetAsync<List<ProductDto>>("products");
+                if (response.Success && response.Data != null && response.Data.Count > 0)
+                {
+                    return response.Data.Select(d => new Product
+                    {
+                        Id = d.Id,
+                        ProductCode = d.ProductCode,
+                        Name = d.Name,
+                        CategoryId = d.CategoryId,
+                        Category = d.Category,
+                        Unit = d.Unit,
+                        MinQty = d.MinQty,
+                        AvgPrice = d.AvgPrice,
+                        ProductType = d.ProductType ?? "Moving Asset",
+                        CreatedAt = FormatCreatedAt(d.CreatedAt),
+                        IsActive = d.IsActive
+                    }).ToList();
+                }
+            }
+            catch { }
+
+            // Fallback to direct SQL
+            return await GetProductsDirectSqlAsync();
+        }
+
+        public static async Task<List<Product>> GetProductsDirectSqlAsync()
         {
             var list = new List<Product>();
 
@@ -237,6 +344,38 @@ namespace StockPortalApp.Data
         /// <summary>Inserts (product.Id == null) or updates. Returns (Id, ProductCode).</summary>
         public static async Task<(int Id, string ProductCode)> SaveProductAsync(Product product)
         {
+            // API Call
+            var dto = new SaveProductDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                CategoryId = product.CategoryId,
+                Category = product.Category,
+                Unit = product.Unit,
+                MinQty = product.MinQty,
+                AvgPrice = product.AvgPrice,
+                ProductType = product.ProductType,
+                IsActive = product.IsActive
+            };
+
+            var response = await ApiClient.PostAsync<Dictionary<string, object>>("products", dto);
+            if (response.Success && response.Data != null)
+            {
+                int id = 0;
+                string code = string.Empty;
+                if (response.Data.TryGetValue("id", out var idVal) || response.Data.TryGetValue("Id", out idVal))
+                {
+                    int.TryParse(idVal?.ToString(), out id);
+                }
+                if (response.Data.TryGetValue("productCode", out var codeVal) || response.Data.TryGetValue("ProductCode", out codeVal))
+                {
+                    code = codeVal?.ToString() ?? string.Empty;
+                }
+                return (id, code);
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -254,20 +393,33 @@ namespace StockPortalApp.Data
             await reader.ReadAsync();
 
             return (reader.GetInt32(reader.GetOrdinal("Id")), reader.GetString(reader.GetOrdinal("ProductCode")));
+            */
+            return (0, string.Empty);
         }
 
         public static async Task DeleteProductAsync(int id)
         {
+            // API Call
+            await ApiClient.DeleteAsync<bool>($"products/{id}");
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
             using var cmd = new SqlCommand("DELETE FROM dbo.Products WHERE Id = @Id", conn);
             cmd.Parameters.AddWithValue("@Id", id);
             await cmd.ExecuteNonQueryAsync();
+            */
         }
 
         public static async Task ToggleProductStatusAsync(int id, bool isActive)
         {
+            // API Call
+            await ApiClient.PatchAsync<bool>($"products/{id}/status", new ToggleStatusDto { IsActive = isActive });
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -279,6 +431,7 @@ namespace StockPortalApp.Data
             cmd.Parameters.AddWithValue("@IsActive", isActive);
 
             await cmd.ExecuteNonQueryAsync();
+            */
         }
     }
 }

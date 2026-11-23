@@ -64,6 +64,7 @@ namespace StockPortalApp
             DetailsPanel.Children.Add(grid2);
 
             DetailsPanel.Children.Add(CreateFieldCard("BUSINESS ADDRESS", vendor.Address));
+            DetailsPanel.Children.Add(CreateFieldCard("REGISTERED / CREATED AT", vendor.CreatedAt));
 
             // Section 2: Bank Details
             AddSectionHeader("BANK FINANCIAL DETAILS", isSecondary: true);

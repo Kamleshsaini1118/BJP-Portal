@@ -1293,7 +1293,7 @@ namespace StockPortalApp
         {
             if (sender is not Button { DataContext: DamageRecord record }) return;
 
-            new DamageDetailsWindow(record) { Owner = this }.ShowDialog();
+            new DamageDetailsWindow(record.Id, record) { Owner = this }.ShowDialog();
         }
 
         private void PrintDamageReceiptButton_Click(object sender, RoutedEventArgs e)
@@ -1457,18 +1457,27 @@ namespace StockPortalApp
             menu.IsOpen = true;
         }
 
-        private void ExportCompleteStockReport()
+        private async void ExportCompleteStockReport()
         {
+            var qParams = new List<string>();
+            if (StockReportDateFrom.SelectedDate.HasValue) qParams.Add($"dateFrom={StockReportDateFrom.SelectedDate.Value:yyyy-MM-dd}");
+            if (StockReportDateTo.SelectedDate.HasValue) qParams.Add($"dateTo={StockReportDateTo.SelectedDate.Value:yyyy-MM-dd}");
+            var query = "reports/stock-summary/export" + (qParams.Count > 0 ? "?" + string.Join("&", qParams) : "");
+
+            string fileName = $"stock-report-complete-{DateTime.Now:dd-MM-yyyy_HH-mm-ss}.xlsx";
+            await ExcelExportHelper.ExportViaApiAsync(fileName, query);
+
+            /*
+            // --- PREVIOUS LOCAL EXPORT CODE (COMMENTED) ---
             var rows = new List<List<string>>();
             foreach (var s in StockReportGrid.ItemsSource?.Cast<StockReportItem>() ?? Enumerable.Empty<StockReportItem>())
             {
                 rows.Add(new List<string> { s.Item, s.Batches.ToString(), s.TotalQtyDisplay, s.DispatchedDisplay, s.DamageQtyDisplay, s.IssueQtyDisplay, s.RemainingDisplay });
             }
 
-            string fileName = $"stock-report-complete-{DateTime.Now:dd-MM-yyyy_HH-mm-ss}.xlsx";
-
             ExcelExportHelper.Export(fileName, "Stock Report",
                 new List<string> { "Item", "Entries", "Total Qty", "Dispatched", "Damage Qty", "Issue Qty", "Remaining" }, rows);
+            */
         }
 
         private async System.Threading.Tasks.Task ExportParticularProductLedgerReportAsync()
@@ -1491,8 +1500,17 @@ namespace StockPortalApp
                 if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.SelectedProduct))
                 {
                     string productName = dialog.SelectedProduct;
-                    var entries = await StockReportRepository.GetProductLedgerAsync(productName);
+                    char[] invalidChars = System.IO.Path.GetInvalidFileNameChars();
+                    string safeProductName = string.Concat(productName.Select(c => invalidChars.Contains(c) ? '_' : c));
+                    string fileName = $"stock-ledger-{safeProductName}-{DateTime.Now:dd-MM-yyyy_HH-mm-ss}.xlsx";
+                    var query = $"reports/product-ledger/export?productName={Uri.EscapeDataString(productName)}";
 
+                    // Call API Export
+                    await ExcelExportHelper.ExportViaApiAsync(fileName, query);
+
+                    /*
+                    // --- PREVIOUS LOCAL EXPORT CODE (COMMENTED) ---
+                    var entries = await StockReportRepository.GetProductLedgerAsync(productName);
                     if (entries.Count == 0)
                     {
                         MessageBox.Show($"No movement ledger entries found for product '{productName}'.", "No Ledger Entries", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -1512,12 +1530,9 @@ namespace StockPortalApp
                         });
                     }
 
-                    char[] invalidChars = System.IO.Path.GetInvalidFileNameChars();
-                    string safeProductName = string.Concat(productName.Select(c => invalidChars.Contains(c) ? '_' : c));
-                    string fileName = $"stock-ledger-{safeProductName}-{DateTime.Now:dd-MM-yyyy_HH-mm-ss}.xlsx";
-
                     ExcelExportHelper.Export(fileName, $"{productName} Ledger",
                         new List<string> { "Date & Time", "Type / Movement", "Reference Code", "Quantity", "Party / Destination" }, rows);
+                    */
                 }
             }
             catch (System.Exception ex)
@@ -2660,11 +2675,21 @@ namespace StockPortalApp
             }
         }
 
-        private void ViewVendorButton_Click(object sender, RoutedEventArgs e)
+        private async void ViewVendorButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button { DataContext: Vendor vendor }) return;
 
-            new VendorDetailsWindow(vendor) { Owner = this }.ShowDialog();
+            Vendor detailedVendor = vendor;
+            if (vendor.Id.HasValue)
+            {
+                var fresh = await VendorRepository.GetVendorByIdAsync(vendor.Id.Value);
+                if (fresh != null)
+                {
+                    detailedVendor = fresh;
+                }
+            }
+
+            new VendorDetailsWindow(detailedVendor) { Owner = this }.ShowDialog();
         }
 
         private async void ToggleVendorStatusButton_Click(object sender, RoutedEventArgs e)

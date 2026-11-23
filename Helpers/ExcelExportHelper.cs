@@ -67,5 +67,49 @@ namespace StockPortalApp.Helpers
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        /// <summary>
+        /// Calls the Web API export endpoint, streams the generated .xlsx file, and saves it
+        /// to the user's chosen location with an optional prompt to open it.
+        /// </summary>
+        public static async Task ExportViaApiAsync(string suggestedFileName, string apiEndpoint)
+        {
+            var dialog = new SaveFileDialog
+            {
+                FileName = suggestedFileName,
+                Filter = "Excel Workbook (*.xlsx)|*.xlsx",
+                DefaultExt = ".xlsx"
+            };
+
+            if (dialog.ShowDialog() != true) return;
+
+            try
+            {
+                bool success = await StockPortalApp.Services.ApiClient.DownloadFileAsync(apiEndpoint, dialog.FileName);
+                if (success)
+                {
+                    var result = MessageBox.Show(
+                        $"Report exported successfully!\n\nSaved to: {dialog.FileName}\n\nWould you like to open it now?",
+                        "Export Complete",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Information);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Failed to download export from the server. Check if there are records to export.",
+                        "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Could not export file via API.\n\n{ex.Message}",
+                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }

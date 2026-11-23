@@ -256,8 +256,12 @@ namespace StockPortalApp
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Could not save the damage report.\n\n{ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                var title = ex.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase)
+                    ? "Duplicate Warning"
+                    : "Warning";
+
+                MessageBox.Show(ex.Message, title,
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 SubmitButton.IsEnabled = true;
             }
         }

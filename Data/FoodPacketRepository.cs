@@ -1,5 +1,7 @@
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.FoodPackets;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -17,6 +19,15 @@ namespace StockPortalApp.Data
 
         public static async Task<List<FoodPacketBatch>> GetBatchesAsync()
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<FoodPacketBatch>>("food-packets/batches");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<FoodPacketBatch>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -45,6 +56,8 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<FoodPacketBatch>();
         }
 
         private static int GetOrdinalSafe(SqlDataReader reader, string columnName)
@@ -62,6 +75,42 @@ namespace StockPortalApp.Data
             string itemName, string? mealFor, string? vendorName, string? meetingCampaign, decimal qty,
             DateTime batchDate, string? receiverName, string? receiverNumber)
         {
+            // API Call
+            var dto = new CreateFoodPacketBatchDto
+            {
+                ItemName = itemName,
+                MealFor = mealFor,
+                VendorName = vendorName,
+                MeetingCampaign = meetingCampaign,
+                Qty = qty,
+                BatchDate = batchDate,
+                ReceiverName = receiverName,
+                ReceiverNumber = receiverNumber
+            };
+
+            var response = await ApiClient.PostAsync<Dictionary<string, object>>("food-packets/batches", dto);
+            if (response.Success && response.Data != null)
+            {
+                int id = 0;
+                string code = string.Empty;
+                if (response.Data.TryGetValue("id", out var idVal) || response.Data.TryGetValue("Id", out idVal))
+                {
+                    int.TryParse(idVal?.ToString(), out id);
+                }
+                if (response.Data.TryGetValue("batchCode", out var codeVal) || response.Data.TryGetValue("BatchCode", out codeVal))
+                {
+                    code = codeVal?.ToString() ?? string.Empty;
+                }
+                return (id, code);
+            }
+
+            if (!response.Success)
+            {
+                throw new InvalidOperationException(response.Message ?? "Failed to add food packet batch.");
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -78,11 +127,30 @@ namespace StockPortalApp.Data
             using var reader = await cmd.ExecuteReaderAsync();
             await reader.ReadAsync();
             return (reader.GetInt32(reader.GetOrdinal("Id")), reader.GetString(reader.GetOrdinal("BatchCode")));
+            */
+            return (0, string.Empty);
         }
 
-        /// <summary>Dispatches a quantity from a batch. Throws SqlException with a friendly message if over-dispatching.</summary>
+        /// <summary>Dispatches a quantity from a batch.</summary>
         public static async Task DispatchAsync(int batchId, string personName, string personNumber, decimal qty, DateTime dispatchDate)
         {
+            // API Call
+            var dto = new DispatchFoodPacketDto
+            {
+                BatchId = batchId,
+                PersonName = personName,
+                PersonNumber = personNumber,
+                Qty = qty,
+                DispatchDate = dispatchDate
+            };
+            var response = await ApiClient.PostAsync<bool>("food-packets/dispatch", dto);
+            if (!response.Success)
+            {
+                throw new InvalidOperationException(response.Message ?? "Failed to dispatch batch.");
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             using var conn = new SqlConnection(ConnectionString);
             await conn.OpenAsync();
 
@@ -94,10 +162,20 @@ namespace StockPortalApp.Data
             cmd.Parameters.AddWithValue("@DispatchDate", dispatchDate.Date);
 
             await cmd.ExecuteNonQueryAsync();
+            */
         }
 
         public static async Task<List<BatchDispatchRecord>> GetDispatchesAsync(int batchId)
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<BatchDispatchRecord>>($"food-packets/batches/{batchId}/dispatches");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<BatchDispatchRecord>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -121,10 +199,21 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<BatchDispatchRecord>();
         }
 
         public static async Task<List<LedgerEntry>> GetLedgerAsync()
         {
+            // API Call
+            var response = await ApiClient.GetAsync<List<LedgerEntry>>("food-packets/ledger");
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             var list = new List<LedgerEntry>();
 
             using var conn = new SqlConnection(ConnectionString);
@@ -147,6 +236,8 @@ namespace StockPortalApp.Data
             }
 
             return list;
+            */
+            return new List<LedgerEntry>();
         }
     }
 }

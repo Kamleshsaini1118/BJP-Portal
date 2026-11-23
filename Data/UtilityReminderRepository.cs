@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using StockPortalApp.Models;
+using StockPortalApp.Services;
+using StockPortal.Core.DTOs.Utilities;
 
 namespace StockPortalApp.Data
 {
@@ -20,6 +22,16 @@ namespace StockPortalApp.Data
 
         public static async Task<List<UtilityReminder>> GetRemindersAsync(string? searchQuery = null)
         {
+            // API Call
+            var url = "utilities/reminders" + (!string.IsNullOrWhiteSpace(searchQuery) ? $"?searchQuery={Uri.EscapeDataString(searchQuery)}" : "");
+            var response = await ApiClient.GetAsync<List<UtilityReminder>>(url);
+            if (response.Success && response.Data != null)
+            {
+                return response.Data;
+            }
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 var list = new List<UtilityReminder>();
@@ -85,7 +97,6 @@ namespace StockPortalApp.Data
             }
             catch
             {
-                // Fallback to in-memory cache if SQL database fails
                 lock (SyncLock)
                 {
                     var query = InMemReminders.AsEnumerable();
@@ -100,10 +111,25 @@ namespace StockPortalApp.Data
                     return query.OrderBy(r => r.DueDay).ToList();
                 }
             }
+            */
+            return new List<UtilityReminder>();
         }
 
         public static async Task SaveReminderAsync(UtilityReminder reminder)
         {
+            // API Call
+            var dto = new
+            {
+                Id = reminder.Id,
+                UtilityType = reminder.UtilityName,
+                DueDay = reminder.DueDay,
+                RemindDaysBefore = reminder.RemindDaysBefore != null ? string.Join(",", reminder.RemindDaysBefore) : string.Empty,
+                Remarks = reminder.Remarks
+            };
+            await ApiClient.PostAsync<int>("utilities/reminders", dto);
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 string remindDaysStr = reminder.RemindDaysBefore != null && reminder.RemindDaysBefore.Count > 0
@@ -158,7 +184,6 @@ namespace StockPortalApp.Data
             }
             catch
             {
-                // Fallback to in-memory cache
                 lock (SyncLock)
                 {
                     if (reminder.Id <= 0)
@@ -180,10 +205,16 @@ namespace StockPortalApp.Data
                     }
                 }
             }
+            */
         }
 
         public static async Task DeleteReminderAsync(int reminderId)
         {
+            // API Call
+            await ApiClient.DeleteAsync<bool>($"utilities/reminders/{reminderId}");
+
+            /*
+            // --- DIRECT SQL CODE (COMMENTED) ---
             try
             {
                 using (var conn = new SqlConnection(ConnectionString))
@@ -204,6 +235,7 @@ namespace StockPortalApp.Data
                     InMemReminders.RemoveAll(r => r.Id == reminderId);
                 }
             }
+            */
         }
     }
 }

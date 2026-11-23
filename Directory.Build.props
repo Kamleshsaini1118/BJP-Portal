@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <EnableDefaultWorkloadAutoImport>false</EnableDefaultWorkloadAutoImport>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+</Project>
